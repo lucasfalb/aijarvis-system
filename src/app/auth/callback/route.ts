@@ -1,41 +1,35 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-
-export const dynamic = 'force-dynamic';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
-    const { searchParams, origin } = new URL(request.url);
-    const code = searchParams.get('code');
-    const next = searchParams.get('next') ?? '/app'; // ✅ Redirects to /app by default
+    const requestUrl = new URL(request.url)
+    const code = requestUrl.searchParams.get('code')
+    const next = requestUrl.searchParams.get('next') ?? '/app'
 
     if (!code) {
-      console.error('Missing auth code in callback URL.');
-      return NextResponse.redirect(`${origin}/auth/sign-in`);
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url))
     }
 
-    // ✅ Initialize Supabase client
-    const supabase = await createClient();
-
-    // ✅ Exchange code for session
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
     if (error) {
-      console.error('Supabase Auth Error:', error);
-      return NextResponse.redirect(`${origin}/auth/sign-in`);
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url))
     }
 
-    // ✅ Retrieve session to verify authentication
-    const { data: { session } } = await supabase.auth.getSession();
-
+    // Verify session after exchange
+    const { data: { session } } = await supabase.auth.getSession()
+    
     if (!session) {
-      console.error('No session found after exchanging code.');
-      return NextResponse.redirect(`${origin}/auth/sign-in`);
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url))
     }
 
-    return NextResponse.redirect(`${origin}${next}`);
+    return NextResponse.redirect(new URL(next, request.url))
   } catch (error) {
-    console.error('Auth callback error:', error);
-    return NextResponse.redirect('/auth/sign-in');
+    console.error('Auth callback error:', error)
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url))
   }
 }

@@ -1,7 +1,4 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { getUserInfo } from "@/lib/actions/user"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -16,13 +13,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { generateMetadata } from "@/lib/utils"
 
-export const metadata = generateMetadata("Dashboard")
 
-export default async function Page() {
-  const user = await getUserInfo()
-
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -50,24 +47,9 @@ export default async function Page() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarImage src={user?.avatar} />
-                <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="space-y-1">
-                <h3 className="font-medium">{user?.fullName || 'No name set'}</h3>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-                <p className="text-xs text-muted-foreground">Signed in with {user?.provider || 'email'}</p>
-              </div>
-            </CardContent>
-          </Card>
+       {children}
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
