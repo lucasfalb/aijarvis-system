@@ -1,31 +1,26 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export const createClient = async () => {
-  const cookieStore = await cookies() // Resolver a Promise
+export async function createClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value ?? null
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options?: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            console.error('Error setting cookie:', error)
-            throw new Error('Failed to set authentication cookie')
-          }
-        },
-        remove(name: string, options?: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options, maxAge: -1 }) // Remover cookie
-          } catch (error) {
-            console.error('Error removing cookie:', error)
-            throw new Error('Failed to remove authentication cookie')
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
           }
         },
       },

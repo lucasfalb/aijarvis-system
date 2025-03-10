@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { createProject, updateProject } from "@/lib/actions/project"
+import { createProject, updateProject, shareProject } from "@/lib/actions/project"
 
 interface ProjectFormProps {
   onSuccess?: () => void;
@@ -20,6 +20,11 @@ interface ProjectFormProps {
 export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("")
+  
+  // ✅ Fixed: Use valid roles ('admin', 'moderator', 'viewer')
+  const [role, setRole] = useState<'admin' | 'moderator' | 'viewer'>('viewer')
+
   const isEditing = !!initialData
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -57,31 +62,19 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
     }
   }
 
+
   return (
     <form onSubmit={onSubmit} className="space-y-6 p-4">
       <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium">
-          Name
-        </label>
-        <Input 
-          id="name" 
-          name="name" 
-          required 
-          defaultValue={initialData?.name}
-        />
+        <label htmlFor="name" className="text-sm font-medium">Name</label>
+        <Input id="name" name="name" required defaultValue={initialData?.name} />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium">
-          Description
-        </label>
-        <Textarea 
-          id="description" 
-          name="description" 
-          defaultValue={initialData?.description}
-        />
+        <label htmlFor="description" className="text-sm font-medium">Description</label>
+        <Textarea id="description" name="description" defaultValue={initialData?.description} />
       </div>
-
+    
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update Project" : "Create Project")}
       </Button>
