@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Logo } from "./logo"
 import Link from "next/link"
+import { ModeToggle } from "./mode-toggle"
 
 // This is sample data.
 const data = {
@@ -60,7 +61,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar className="absolute" collapsible="icon" {...props}>
-      <SidebarHeader className="p-4 pb-0 overflow-hidden">
+      <SidebarHeader className={`${state === "collapsed" ? "mx-auto flex p-2" : "p-4"} overflow-hidden`} >
         <BotIcon className={`${state === "collapsed" ? "mx-auto flex" : "hidden"}`} />
         <Link href="/app">
           <Logo className={`w-42 h-fit ${state === "collapsed" ? "hidden" : "block"}`} />
@@ -68,9 +69,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <Nav projects={data.projects} />
-        <SidebarTrigger className="ml-auto mt-auto mr-2" />
+        <div className={`${state === "collapsed" ? "flex-col p-1" : "flex-row px-3"} "ml-auto mt-auto flex justify-between gap-5 w-full overflow-hidden`}>
+          <ModeToggle />
+          <SidebarTrigger />
+        </div>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t mt-2">
         <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />

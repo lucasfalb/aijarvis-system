@@ -1,31 +1,42 @@
-import { createClient } from "@/lib/supabase/server"
+import { getProject } from "@/lib/actions/project"
 import { notFound } from "next/navigation"
+import { Metadata } from "next"
+import { getMonitors } from "@/lib/actions/monitor"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight } from "lucide-react"
 
-export default async function ProjectPage({
-  params,
-}: {
-  params: { id: string }
-}) {
-  const supabase = await createClient()
+type ProjectPageProps = {
+  params: {
+    id: string
+  }
+}
 
-  // Fetch project and check user access
-  const { data: project, error } = await supabase
-    .from("projects")
-    .select(`
-      id,
-      name,
-      description,
-      created_at,
-      user_projects!inner (
-        role
-      )
-    `)
-    .eq("id", params.id)
-    .single()
+export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+  const result = await getProject(params.id)
+  if (!result.success || !result.project) {
+    return { title: 'Project Not Found' }
+  }
+  
+  return {
+    title: `${result.project.name} - AIJARVIS`,
+    description:`${result.project.description} - AIJARVIS`,
+  }
+}
 
-  if (error || !project) {
+export default async function ProjectPage({ params }: ProjectPageProps) {
+  const result = await getProject(params.id)
+  const monitorsResult = await getMonitors(params.id)
+
+  if (!result.success || !result.project) {
     notFound()
   }
+
+  const { project, role } = result
+  const projectMonitors = monitorsResult.success 
+    ? monitorsResult.monitors?.filter(m => m.project_id === params.id) 
+    : []
 
   return (
     <div className="space-y-6">
@@ -36,15 +47,55 @@ export default async function ProjectPage({
         )}
       </div>
 
-      <div className="grid gap-4">
-        {/* Project content will go here */}
-        <div className="rounded-lg border p-4">
-          <h2 className="font-semibold mb-2">Project Details</h2>
-          <div className="text-sm text-muted-foreground">
-            Created: {new Date(project.created_at).toLocaleDateString()}
-          </div>
-        </div>
-      </div>
+      <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Project Details</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1">
+            <span>Created: {new Date(project.created_at).toLocaleDateString()}</span>
+            <span>Your Role: {role}</span>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Monitors</CardTitle>
+            <Link href={`/app/projects/${params.id}/monitors`}>
+              <Button variant="ghost" size="sm">
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {projectMonitors && projectMonitors.length > 0 ? (
+              <div className="space-y-4">
+                {projectMonitors.slice(0, 3).map((monitor) => (
+                  <div key={monitor.id} className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{monitor.account_name}</div>
+                      <div className="text-sm text-muted-foreground">{monitor.platform}</div>
+                    </div>
+                    <Link href={`/app/projects/${params.id}/monitors/${monitor.id}`}>
+                      <Button variant="ghost" size="sm">
+                        View
+                      </Button>
+                    </Link>
+                  </div>
+                ))}
+                {projectMonitors.length > 3 && (
+                  <div className="text-sm text-muted-foreground text-center pt-2">
+                    And {projectMonitors.length - 3} more monitors...
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground text-center py-4">
+                No monitors found. Create your first monitor to get started.
+              </div>
+            )}
+          </CardContent>
+        </Card>
     </div>
   )
 }

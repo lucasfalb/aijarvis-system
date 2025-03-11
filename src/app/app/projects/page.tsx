@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import ProjectCard from "./_components/project-card";
 import CreateNewProject from "./_components/create-new-project";
 import { getProjects } from "@/lib/actions/project";
+import { Project } from "@/lib/types/database";
 
 export const metadata: Metadata = {
     title: "Projects",
@@ -15,6 +16,9 @@ export default async function ProjectsPage() {
         return <div className="text-red-500">Error loading projects.</div>;
     }
 
+    // Type assertion to ensure projects match the Project type
+    const typedProjects = (projects as unknown) as Project[];
+
     return (
         <div className="container py-8">
             <div className="flex items-center justify-between mb-8">
@@ -22,12 +26,12 @@ export default async function ProjectsPage() {
                 <CreateNewProject />
             </div>
 
-            {projects?.length === 0 ? (
+            {typedProjects?.length === 0 ? (
                 <p className="text-gray-500">No projects found.</p>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {projects?.map((project) => (
-                        <ProjectCard key={project?.id} project={project} />
+                    {typedProjects?.map((project) => (
+                        <ProjectCard key={project.id} project={project} />
                     ))}
                 </div>
             )}

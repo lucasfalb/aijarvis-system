@@ -25,6 +25,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       action: {
         label: "Delete",
         onClick: async () => {
+          setIsDeleting(true);
           toast.promise(
             new Promise(async (resolve, reject) => {
               try {
@@ -35,13 +36,15 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                 router.refresh();
                 resolve(true);
               } catch (error) {
-                reject(error);
+                reject(error instanceof Error ? error.message : 'Failed to delete project');
+              } finally {
+                setIsDeleting(false);
               }
             }),
             {
               loading: 'Deleting project...',
               success: 'Project deleted successfully',
-              error: 'Failed to delete project'
+              error: (error) => `Error: ${error}`
             }
           );
         }
@@ -63,7 +66,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </CardContent>
       </Link>
       <CardFooter className="flex justify-end gap-2">
-        <EditProject project={project} />
+        <EditProject project={{
+          id: project.id,
+          name: project.name,
+          description: project.description || undefined
+        }} />
         <Button 
           variant="ghost" 
           size="icon"
