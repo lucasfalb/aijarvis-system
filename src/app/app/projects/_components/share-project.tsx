@@ -58,9 +58,9 @@ export default function ShareProject({ projectId, onShare }: ShareProjectProps) 
           value={role}
           onChange={(e) => setRole(e.target.value as 'viewer' | 'moderator' | 'admin')}
         >
-          <option value="viewer">Viewer</option>
-          <option value="moderator">Moderator</option>
-          <option value="admin">Admin</option>
+          <option className="text-black" value="viewer">Viewer</option>
+          <option className="text-black" value="moderator">Moderator</option>
+          <option className="text-black" value="admin">Admin</option>
         </select>
         <Button 
           type="button" 
