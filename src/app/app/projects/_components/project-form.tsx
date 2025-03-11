@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
-import { createProject, updateProject, shareProject } from "@/lib/actions/project"
+import { createProject, updateProject } from "@/lib/actions/project"
 
 interface ProjectFormProps {
   onSuccess?: () => void;
@@ -20,11 +20,6 @@ interface ProjectFormProps {
 export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [email, setEmail] = useState("")
-  
-  // ✅ Fixed: Use valid roles ('admin', 'moderator', 'viewer')
-  const [role, setRole] = useState<'admin' | 'moderator' | 'viewer'>('viewer')
-
   const isEditing = !!initialData
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -37,6 +32,7 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
         ? await updateProject(initialData.id, formData)
         : await createProject(formData)
 
+      // In onSubmit function, update the success handling
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -49,8 +45,9 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
         },
       })
 
-      router.push("/app/projects")
+      // Add revalidatePath here through router.refresh()
       router.refresh()
+      router.push("/app/projects")
       onSuccess?.()
     } catch (error) {
       console.error("Error with project:", error)

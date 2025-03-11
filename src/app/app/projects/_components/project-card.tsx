@@ -29,11 +29,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           toast.promise(
             new Promise(async (resolve, reject) => {
               try {
+                // In handleDelete function, update the success handling
                 const result = await deleteProject(project.id);
                 if (!result.success) {
                   throw new Error(result.error);
                 }
                 router.refresh();
+                router.push('/app/projects');
                 resolve(true);
               } catch (error) {
                 reject(error instanceof Error ? error.message : 'Failed to delete project');

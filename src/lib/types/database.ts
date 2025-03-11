@@ -21,7 +21,7 @@ interface DatabaseRecord {
     project_id: string;
     name: string;
     type: 'social' | 'web' | 'api';
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
     status: MonitorStatus;
   }
   
@@ -37,9 +37,10 @@ interface DatabaseRecord {
     monitor_id: string;
     webhook_id: string;
     content: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     status: CommentStatus;
     source?: string;
+    received_at: Date;
     author?: string;
   }
   
@@ -48,7 +49,7 @@ interface DatabaseRecord {
     content: string;
     reviewed_by: string | null;
     status: ResponseStatus;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     ai_generated: boolean;
   }
   

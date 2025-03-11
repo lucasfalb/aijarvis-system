@@ -5,8 +5,6 @@ import { getUserInfoClient } from "@/lib/actions/user-client"
 import {
   BotIcon,
   Frame,
-  Map,
-  PieChart,
 } from "lucide-react"
 
 import { Nav } from "@/components/nav-links"

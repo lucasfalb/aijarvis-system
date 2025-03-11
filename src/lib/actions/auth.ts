@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 export async function signIn(formData: FormData) {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   })
@@ -93,7 +93,8 @@ export async function signInWithGoogle() {
       return data.url
     }
     return { success: true, data };
-  } catch (err) {
-    return { error: "An unexpected error occurred. Please try again." };
-  }
+  } catch (error) {
+      console.error("Google sign-in error:", error);
+      return { error: "An unexpected error occurred. Please try again." };
+    }
 }

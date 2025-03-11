@@ -6,24 +6,24 @@ import { getProject } from "@/lib/actions/project"
 import { DataTable } from "@/components/data-table"
 import { columns } from "./columns"
 
-export default async function MonitorsPage({ 
-  params 
-}: { 
-  params: { id: string } 
+export default async function MonitorsPage({
+  params
+}: {
+  params: { id: string }
 }) {
-  const projectResult = await getProject(params.id);
+  const {id} = await params;
+  
+  const projectResult = await getProject(id);
   if (!projectResult.success || !projectResult.project) {
     notFound();
   }
 
-  const { success, monitors, error } = await getMonitors(params.id);
+  const { success, monitors, error } = await getMonitors(id);
   if (!success) {
     console.error('Error loading monitors:', error);
     return <div>Error: {error}</div>
   }
-
   const projectMonitors = monitors || [];
-
   return (
     <div className="container py-8">
       <div className="flex items-center justify-between mb-8">
@@ -33,26 +33,29 @@ export default async function MonitorsPage({
             Project: {projectResult.project.name}
           </p>
         </div>
-        <CreateNewMonitor projectId={params.id} />
+        <CreateNewMonitor projectId={id} />
       </div>
 
-      <DataTable 
-        columns={columns} 
+      <DataTable
+        columns={columns}
         data={projectMonitors}
         searchKey="account_name"
+        pageSize={10}
+        showPaginationOnLength={10}
       />
     </div>
   )
 }
 
-
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: { id: string } 
+export async function generateMetadata({
+  params
+}: {
+  params: { id: string }
 }): Promise<Metadata> {
-  const result = await getProject(params.id)
+  const {id} = await params;
   
+  const result = await getProject(id)
+
   if (!result.success || !result.project) {
     return { title: 'Monitors - Not Found' }
   }

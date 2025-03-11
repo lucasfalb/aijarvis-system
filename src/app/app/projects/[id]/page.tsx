@@ -13,21 +13,27 @@ type ProjectPageProps = {
   }
 }
 
-export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
-  const result = await getProject(params.id)
+export async function generateMetadata({ 
+  params 
+}: ProjectPageProps): Promise<Metadata> {
+  const {id} = await params
+  const result = await getProject(id)
   if (!result.success || !result.project) {
     return { title: 'Project Not Found' }
   }
   
   return {
     title: `${result.project.name} - AIJARVIS`,
-    description:`${result.project.description} - AIJARVIS`,
+    description: `${result.project.description} - AIJARVIS`,
   }
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
-  const result = await getProject(params.id)
-  const monitorsResult = await getMonitors(params.id)
+export default async function ProjectPage({ 
+  params 
+}: ProjectPageProps) {
+  const {id} = await params;
+  const result = await getProject(id)
+  const monitorsResult = await getMonitors(id)
 
   if (!result.success || !result.project) {
     notFound()
@@ -35,7 +41,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   const { project, role } = result
   const projectMonitors = monitorsResult.success 
-    ? monitorsResult.monitors?.filter(m => m.project_id === params.id) 
+    ? monitorsResult.monitors?.filter(m => m.project_id === id) 
     : []
 
   return (
@@ -60,7 +66,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Monitors</CardTitle>
-            <Link href={`/app/projects/${params.id}/monitors`}>
+            <Link href={`/app/projects/${id}/monitors`}>
               <Button variant="ghost" size="sm">
                 View All
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -76,7 +82,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                       <div className="font-medium">{monitor.account_name}</div>
                       <div className="text-sm text-muted-foreground">{monitor.platform}</div>
                     </div>
-                    <Link href={`/app/projects/${params.id}/monitors/${monitor.id}`}>
+                    <Link href={`/app/projects/${id}/monitors/${monitor.id}`}>
                       <Button variant="ghost" size="sm">
                         View
                       </Button>

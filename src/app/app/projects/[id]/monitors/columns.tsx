@@ -12,16 +12,96 @@ import {
 import { deleteMonitor } from "@/lib/actions/monitor"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import EditMonitor from "./_components/edit-monitor"
+import { Copy } from "lucide-react"
+import { Row } from "@tanstack/react-table"
 
 export type Monitor = {
+  access_token: string
   id: string
   account_name: string
   platform: string
   created_at: string
   updated_at: string
-  webhook: string
+  webhook_receive: string
   project_id: string
 }
+
+const AccountNameCell = ({ row }: { row: Row<Monitor> }) => {
+  const router = useRouter();
+  const monitor = row.original;
+  
+  return (
+    <Button
+      variant="link"
+      className="p-0 h-auto font-normal"
+      onClick={() => router.push(`/app/projects/${monitor.project_id}/monitors/${monitor.id}`)}
+    >
+      {monitor.account_name}
+    </Button>
+  );
+};
+
+const ActionsCell = ({ row }: { row: Row<Monitor> }) => {
+  const monitor = row.original;
+  const router = useRouter();
+  
+  const handleDelete = async () => {
+    try {
+      const result = await deleteMonitor(monitor.id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      toast.success("Monitor deleted successfully");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete monitor");
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          onClick={() => router.push(`/app/projects/${monitor.project_id}/monitors/${monitor.id}`)}
+        >
+          View Details
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <EditMonitor
+            projectId={monitor.project_id}
+            monitor={{
+              id: monitor.id,
+              account_name: monitor.account_name,
+              access_token: monitor.access_token,
+              platform: monitor.platform,
+              webhook_receive: monitor.webhook_receive,
+            }}
+          />
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            toast.warning("Are you sure you want to delete this monitor?", {
+              action: {
+                label: "Delete",
+                onClick: handleDelete
+              }
+            })
+          }}
+          className="text-red-600"
+        >
+          Delete Monitor
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 export const columns: ColumnDef<Monitor>[] = [
   {
@@ -35,19 +115,44 @@ export const columns: ColumnDef<Monitor>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: AccountNameCell
   },
   {
     accessorKey: "platform",
     header: "Platform",
   },
   {
-    accessorKey: "webhook",
+    accessorKey: "webhook_receive",
     header: "Webhook URL",
-    cell: ({ row }) => (
-      <div className="max-w-[200px] truncate" title={row.getValue("webhook")}>
-        {row.getValue("webhook")}
-      </div>
-    ),
+    cell: ({ row }) => {
+        const webhook = row.getValue("webhook_receive");
+        
+        const handleCopy = async () => {
+            await navigator.clipboard.writeText(webhook as string);
+            toast.success("Webhook URL copied to clipboard");
+        };
+    
+        return (
+            <div className="flex items-center gap-2 max-w-[200px] group">
+                <div 
+                    className="truncate cursor-pointer hover:text-primary" 
+                    title={webhook as string}
+                    onClick={handleCopy}
+                >
+                    {webhook as string}
+                </div>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-0 h-8 w-8 hover:bg-secondary"
+                    onClick={handleCopy}
+                >
+                    <Copy className="h-4 w-4" />
+                </Button>
+            </div>
+        );
+    },
   },
   {
     accessorKey: "updated_at",
@@ -80,53 +185,6 @@ export const columns: ColumnDef<Monitor>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => {
-      const monitor = row.original
-      const router = useRouter()
-
-      const handleDelete = async () => {
-        try {
-          const result = await deleteMonitor(monitor.id)
-          if (!result.success) {
-            throw new Error(result.error)
-          }
-          toast.success("Monitor deleted successfully")
-          router.refresh()
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "Failed to delete monitor")
-        }
-      }
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => router.push(`/app/projects/${monitor.project_id}/monitors/${monitor.id}`)}
-            >
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                toast.warning("Are you sure you want to delete this monitor?", {
-                  action: {
-                    label: "Delete",
-                    onClick: handleDelete
-                  }
-                })
-              }}
-              className="text-red-600"
-            >
-              Delete Monitor
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )
-    },
+    cell: ActionsCell
   },
 ]

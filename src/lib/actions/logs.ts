@@ -11,8 +11,9 @@ type LogActionResult = {
         action: string;
         entity?: string;
         entity_id?: string;
-        old_value?: object;
-        new_value?: object;
+        previous_data?: object;
+        updated_data?: object;
+        details?: object;
         timestamp: string;
     };
     logs?: Array<{
@@ -22,15 +23,32 @@ type LogActionResult = {
         action: string;
         entity?: string;
         entity_id?: string;
-        old_value?: object;
-        new_value?: object;
+        previous_data?: object;
+        updated_data?: object;
+        details?: object;
         timestamp: string;
     }>;
     error?: string;
 };
 
-// ✅ Criar um novo log de ação
-export async function createLog(action: string, userId?: string, userEmail?: string, entity?: string, entityId?: string, oldValue?: object, newValue?: object): Promise<LogActionResult> {
+// ✅ Criar um novo log de ação (apenas em produção)
+export async function createLog(
+    action: string,
+    userId?: string,
+    userEmail?: string,
+    entity?: string,
+    entityId?: string,
+    previousData?: object,
+    updatedData?: object,
+    details?: object
+): Promise<LogActionResult> {
+
+    // 🛑 Se estiver em ambiente de desenvolvimento, não cria logs
+    if (process.env.NODE_ENV === 'development') {
+        console.log(`[LOGGING DISABLED IN DEV] ${action} on ${entity} (${entityId})`);
+        return { success: true };
+    }
+
     const supabase = await createClient();
 
     try {
@@ -42,8 +60,9 @@ export async function createLog(action: string, userId?: string, userEmail?: str
                 action,
                 entity: entity || null,
                 entity_id: entityId || null,
-                old_value: oldValue || null,
-                new_value: newValue || null,
+                previous_data: previousData || null,
+                updated_data: updatedData || null,
+                details: details || null,
             })
             .select()
             .single();
@@ -82,12 +101,12 @@ export async function getLogsByUser(userId: string, userEmail?: string): Promise
     const supabase = await createClient();
 
     try {
-        const query = supabase.from('logs').select('*').order('timestamp', { ascending: false });
+        let query = supabase.from('logs').select('*').order('timestamp', { ascending: false });
 
         if (userEmail) {
-            query.eq('user_email', userEmail);
+            query = query.eq('user_email', userEmail);
         } else {
-            query.eq('user_id', userId);
+            query = query.eq('user_id', userId);
         }
 
         const { data: logs, error } = await query;

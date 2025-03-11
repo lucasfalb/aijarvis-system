@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { MoreHorizontal, Search } from "lucide-react";
@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 
 interface ProjectMembersProps {
   projectId: string;
@@ -31,7 +32,14 @@ type Member = {
   role: string;
 };
 
+interface ProjectMember {
+  user_id: string;
+  email: string | null;
+  role: string;
+}
+
 export default function ProjectMembers({ projectId }: ProjectMembersProps) {
+  const router = useRouter();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -40,16 +48,12 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     direction: 'asc' | 'desc';
   }>({ key: 'email', direction: 'asc' });
 
-  useEffect(() => {
-    fetchMembers();
-  }, [projectId]);
-
-  async function fetchMembers() {
+  const fetchMembers = useCallback(async () => {
     try {
       const response = await getProjectMembers(projectId);
       if (!response.success) throw new Error(response.error);
 
-      setMembers((response.members ?? []).map((m: any) => ({
+      setMembers((response.members ?? []).map((m: ProjectMember) => ({
         user_id: m.user_id,
         email: m.email ?? "Unknown",
         role: m.role,
@@ -60,7 +64,11 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   async function handleRemoveMember(userId: string) {
     try {
@@ -69,6 +77,7 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
       toast.success("Member removed successfully");
       setMembers(members.filter((m) => m.user_id !== userId));
+      router.refresh();
     } catch (error) {
       console.error("Error removing member:", error);
       toast.error("Failed to remove member");
@@ -84,6 +93,7 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
       setMembers(members.map(m =>
         m.user_id === userId ? { ...m, role: newRole } : m
       ));
+      router.refresh();
     } catch (error) {
       console.error("Error updating role:", error);
       toast.error("Failed to update role");

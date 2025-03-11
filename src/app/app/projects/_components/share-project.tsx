@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { shareProject } from "@/lib/actions/project"
+import { useRouter } from "next/navigation"
 
 interface ShareProjectProps {
   projectId: string;
@@ -12,6 +13,7 @@ interface ShareProjectProps {
 }
 
 export default function ShareProject({ projectId, onShare }: ShareProjectProps) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<'admin' | 'moderator' | 'viewer'>('viewer')
@@ -30,6 +32,7 @@ export default function ShareProject({ projectId, onShare }: ShareProjectProps) 
         description: result.message,
       })
       setEmail("")
+      router.refresh()
       onShare?.()
     } catch (error) {
       toast.error("Error sharing project", {

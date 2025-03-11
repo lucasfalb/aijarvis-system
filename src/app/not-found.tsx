@@ -24,7 +24,7 @@ export default function NotFound() {
     <div className="mx-auto container flex h-screen w-screen flex-col items-center justify-center">
       <div className="flex flex-col items-center gap-6 text-center">
         <h1 className="text-4xl font-bold">404 - Page Not Found</h1>
-        <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
+        <p className="text-muted-foreground">The page you&apos;re looking for doesn&apos;t exist.</p>
         <Link href={redirectPath}>
           <Button>Return Home</Button>
         </Link>

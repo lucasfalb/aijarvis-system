@@ -1,35 +1,53 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
-import { createLog } from './logs';
+
+export interface Monitor {
+    id: string;
+    account_name: string;
+    access_token: string;
+    project_id: string;
+    created_at: string;
+    updated_at: string;
+    platform: string;
+    webhook_receive: string;
+    webhook_send?: string;
+    status?: string;
+}
 
 type MonitorActionResult = {
     success: boolean;
-    monitor?: { id: string; account_name: string; access_token: string; project_id: string; platform: string; webhook: string };
+    monitor?: Monitor;
+    monitors?: Monitor[];
     error?: string;
 };
 
-// ✅ Create a new monitor (only admins of the project can create)
+
+// 🔧 Função auxiliar para gerar um webhook_receive dinâmico
+const generateWebhookReceive = (monitorId: string) => `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/webhook/${monitorId}`;
+
+// 🔧 Webhook Sender (fixo em nossa API)
+const WEBHOOK_SENDER = `${process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE}`;
+
+// ✅ Criar um novo monitor
 export async function createMonitor(formData: FormData): Promise<MonitorActionResult> {
     const supabase = await createClient();
-
+    console.log(WEBHOOK_SENDER)
     try {
         const { data: userData, error: authError } = await supabase.auth.getUser();
-        if (authError || !userData?.user) throw new Error('Please sign in to create a monitor');
+        if (authError || !userData?.user) throw new Error('Error - create a monitor');
 
         const user = userData.user;
         const account_name = String(formData.get('name'));
         const access_token = String(formData.get('access_token'));
         const project_id = String(formData.get('project_id'));
         const platform = String(formData.get('platform'));
-        const webhook = String(formData.get('webhook'));
 
-        if (!account_name || !access_token || !project_id || !platform || !webhook) {
-            throw new Error('All fields (name, access_token, project_id, platform, webhook) are required.');
+        if (!account_name || !access_token || !project_id || !platform) {
+            throw new Error('All required fields must be filled.');
         }
 
-        // ✅ Ensure the user is an admin of the project
+        // ✅ Verificar se o usuário é admin do projeto
         const { data: userProject, error: accessError } = await supabase
             .from('user_projects')
             .select('role')
@@ -41,7 +59,7 @@ export async function createMonitor(formData: FormData): Promise<MonitorActionRe
             throw new Error('Only admins can create monitors.');
         }
 
-        // ✅ Insert the new monitor
+        // ✅ Criar monitor sem webhook_receive ainda
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
             .insert({
@@ -49,35 +67,32 @@ export async function createMonitor(formData: FormData): Promise<MonitorActionRe
                 access_token,
                 project_id,
                 platform,
-                webhook,
+                webhook_receive: '', // Inicialmente vazio
+                webhook_send: WEBHOOK_SENDER, // Webhook de saída fixo
             })
             .select()
             .single();
 
         if (monitorError) throw monitorError;
 
-        // In createMonitor, update the log call:
-        // ✅ Log the creation
-        await createLog(
-            'CREATE_MONITOR',
-            user.id,
-            user.email,
-            'monitor',
-            monitor.id,
-            undefined,
-            { account_name, platform, project_id, webhook }
-        );
+        // ✅ Atualizar monitor com o webhook_receive gerado
+        const webhook_receive = generateWebhookReceive(monitor.id);
+        const { error: updateError } = await supabase
+            .from('monitors')
+            .update({ webhook_receive })
+            .eq('id', monitor.id);
 
-        revalidatePath(`/app/projects/${project_id}/monitors`);
-        return { success: true, monitor };
+        if (updateError) throw updateError;
+
+        return { success: true, monitor: { ...monitor, webhook_receive } };
     } catch (error) {
         console.error('Error creating monitor:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to create monitor' };
     }
 }
 
-// ✅ Update a monitor (only admins of the project can update)
-export async function updateMonitor(monitorId: string, formData: FormData) {
+// ✅ Atualizar um monitor
+export async function updateMonitor(monitorId: string, formData: FormData): Promise<MonitorActionResult> {
     const supabase = await createClient();
 
     try {
@@ -85,12 +100,8 @@ export async function updateMonitor(monitorId: string, formData: FormData) {
         if (authError || !userData?.user) throw new Error('Please sign in to update monitor');
 
         const user = userData.user;
-        const account_name = formData.get('name') ? String(formData.get('name')) : undefined;
-        const access_token = formData.get('access_token') ? String(formData.get('access_token')) : undefined;
-        const platform = formData.get('platform') ? String(formData.get('platform')) : undefined;
-        const webhook = formData.get('webhook') ? String(formData.get('webhook')) : undefined;
-
-        // ✅ Get monitor to check project ID
+        
+        // ✅ Buscar monitor existente
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
             .select('*')
@@ -99,7 +110,7 @@ export async function updateMonitor(monitorId: string, formData: FormData) {
 
         if (monitorError) throw monitorError;
 
-        // ✅ Ensure user is an admin of the project
+        // ✅ Verificar se o usuário é admin do projeto
         const { data: userProject, error: accessError } = await supabase
             .from('user_projects')
             .select('role')
@@ -111,42 +122,38 @@ export async function updateMonitor(monitorId: string, formData: FormData) {
             throw new Error('Only admins can update monitors.');
         }
 
-        // ✅ Perform update
-        const { error: updateError } = await supabase
-            .from('monitors')
-            .update({
-                account_name,
-                access_token,
-                platform,
-                webhook,
-                updated_at: new Date(),
-            })
-            .eq('id', monitorId);
+        // ✅ Atualizar monitor
+        const updates: Partial<Monitor> = {
+            account_name: formData.get('name') ? String(formData.get('name')) : undefined,
+            access_token: formData.get('access_token') ? String(formData.get('access_token')) : undefined,
+            platform: formData.get('platform') ? String(formData.get('platform')) : undefined,
+            webhook_receive: formData.get('webhook_receive') ? String(formData.get('webhook_receive')) : undefined,
+            webhook_send: formData.get('webhook_send') ? String(formData.get('webhook_send')) : undefined,
+            updated_at: new Date().toISOString(),
+        };
 
-        if (updateError) throw updateError;
-
-        // In updateMonitor, update the log call:
-        // ✅ Log the update
-        await createLog(
-            'UPDATE_MONITOR',
-            user.id,
-            user.email,
-            'monitor',
-            monitorId,
-            monitor,
-            { account_name, platform, webhook, updated_at: new Date() }
+        // Remove undefined values
+        Object.keys(updates).forEach(key => 
+            updates[key as keyof Partial<Monitor>] === undefined && delete updates[key as keyof Partial<Monitor>]
         );
 
-        revalidatePath(`/app/monitors/${monitorId}`);
-        return { success: true };
+        const { data: updatedMonitor, error: updateError } = await supabase
+            .from('monitors')
+            .update(updates)
+            .eq('id', monitorId)
+            .select()
+            .single();
+
+        if (updateError) throw updateError;
+        return { success: true, monitor: updatedMonitor as Monitor };
     } catch (error) {
         console.error('Error updating monitor:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to update monitor' };
     }
 }
 
-// ✅ Delete a monitor (only admins of the project can delete)
-export async function deleteMonitor(monitorId: string) {
+// ✅ Deletar um monitor
+export async function deleteMonitor(monitorId: string): Promise<MonitorActionResult> {
     const supabase = await createClient();
 
     try {
@@ -155,7 +162,7 @@ export async function deleteMonitor(monitorId: string) {
 
         const user = userData.user;
 
-        // ✅ Get monitor to check project ID
+        // ✅ Buscar monitor existente
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
             .select('project_id')
@@ -164,7 +171,7 @@ export async function deleteMonitor(monitorId: string) {
 
         if (monitorError) throw monitorError;
 
-        // ✅ Ensure user is an admin of the project
+        // ✅ Verificar se o usuário é admin do projeto
         const { data: userProject, error: accessError } = await supabase
             .from('user_projects')
             .select('role')
@@ -176,24 +183,11 @@ export async function deleteMonitor(monitorId: string) {
             throw new Error('Only admins can delete monitors.');
         }
 
-        // ✅ Perform delete
+        // ✅ Excluir monitor
         const { error: deleteError } = await supabase.from('monitors').delete().eq('id', monitorId);
 
         if (deleteError) throw deleteError;
 
-        // In deleteMonitor, update the log call:
-        // ✅ Log the deletion
-        await createLog(
-            'DELETE_MONITOR',
-            user.id,
-            user.email,
-            'monitor',
-            monitorId,
-            { id: monitorId, project_id: monitor.project_id },
-            undefined
-        );
-
-        revalidatePath(`/app/projects/${monitor.project_id}/monitors`);
         return { success: true };
     } catch (error) {
         console.error('Error deleting monitor:', error);
@@ -201,17 +195,11 @@ export async function deleteMonitor(monitorId: string) {
     }
 }
 
-// ✅ Get a single monitor by ID (must have access)
-export async function getMonitor(monitorId: string) {
+// ✅ Buscar um monitor específico
+export async function getMonitor(monitorId: string): Promise<MonitorActionResult> {
     const supabase = await createClient();
 
     try {
-        const { data: userData, error: authError } = await supabase.auth.getUser();
-        if (authError || !userData?.user) throw new Error('Please sign in to view monitor');
-
-        const user = userData.user;
-
-        // ✅ Fetch monitor
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
             .select('*')
@@ -219,48 +207,18 @@ export async function getMonitor(monitorId: string) {
             .single();
 
         if (monitorError) throw monitorError;
-        // In getMonitor, update the log call:
-        // ✅ Log the read action
-        await createLog(
-            'READ_MONITOR',
-            user.id,
-            user.email,
-            'monitor',
-            monitor.id,
-            undefined,
-            undefined
-        );
-
-        return { success: true, monitor };
+        return { success: true, monitor: monitor as Monitor };
     } catch (error) {
         console.error('Error fetching monitor:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch monitor' };
     }
 }
 
-// ✅ Get all monitors for a specific project
-export async function getMonitors(projectId: string) {
+// ✅ Buscar todos os monitores de um projeto
+export async function getMonitors(projectId: string): Promise<MonitorActionResult> {
     const supabase = await createClient();
 
     try {
-        const { data: userData, error: authError } = await supabase.auth.getUser();
-        if (authError || !userData?.user) throw new Error('Please sign in to view monitors');
-
-        const user = userData.user;
-
-        // ✅ Ensure user has access to the project
-        const { data: userProject, error: projectAccessError } = await supabase
-            .from('user_projects')
-            .select('role')
-            .eq('user_id', user.id)
-            .eq('project_id', projectId)
-            .single();
-
-        if (projectAccessError || !userProject) {
-            throw new Error('Access denied');
-        }
-
-        // ✅ Fetch all monitors for the specified project
         const { data: monitors, error: monitorsError } = await supabase
             .from('monitors')
             .select('*')
@@ -269,19 +227,7 @@ export async function getMonitors(projectId: string) {
 
         if (monitorsError) throw monitorsError;
 
-        // In getMonitors, update the log call:
-        // ✅ Log the read action
-        await createLog(
-            'READ_MONITORS',
-            user.id,
-            user.email,
-            'project',
-            projectId,
-            undefined,
-            undefined
-        );
-
-        return { success: true, monitors };
+        return { success: true, monitors: monitors as Monitor[] };
     } catch (error) {
         console.error('Error fetching monitors:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch monitors' };

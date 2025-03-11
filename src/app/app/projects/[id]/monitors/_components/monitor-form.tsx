@@ -1,6 +1,6 @@
 "use client"
 
-import { createMonitor } from "@/lib/actions/monitor"
+import { createMonitor, updateMonitor } from "@/lib/actions/monitor"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,42 +13,65 @@ import {
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { EyeIcon, EyeOffIcon, Copy } from "lucide-react";
 
 interface MonitorFormProps {
     projectId: string;
     onSuccess?: () => void;
+    initialData?: {
+        id: string;
+        account_name: string;
+        access_token: string;
+        platform: string;
+        webhook_receive: string;
+    };
+    mode?: 'create' | 'edit';
 }
 
-export default function MonitorForm({ projectId, onSuccess }: MonitorFormProps) {
-    const router = useRouter()
-    const [loading, setLoading] = useState(false)
+export default function MonitorForm({ projectId, onSuccess, initialData, mode = 'create' }: MonitorFormProps) {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+    const [showToken, setShowToken] = useState(false);
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault()
-        setLoading(true)
+        event.preventDefault();
+        setLoading(true);
 
         try {
-            const formData = new FormData(event.currentTarget)
-            formData.append('project_id', projectId)
+            const formData = new FormData(event.currentTarget);
+            formData.append('project_id', projectId);
 
-            const result = await createMonitor(formData)
+            const result = mode === 'edit' && initialData
+                ? await updateMonitor(initialData.id, formData)
+                : await createMonitor(formData);
 
             if (!result.success) {
-                throw new Error(result.error)
+                throw new Error(result.error);
             }
 
-            toast.success("Monitor created successfully")
-            router.refresh()
-            onSuccess?.()
+            toast.success(mode === 'edit' ? "Monitor updated" : "Monitor created", {
+                description: `Monitor has been ${mode === 'edit' ? 'updated' : 'created'} successfully.`
+            });
+
+            router.refresh();
+            onSuccess?.();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to create monitor")
+            console.error("Error with monitor:", error);
+            toast.error("Error", {
+                description: error instanceof Error ? error.message : `Failed to ${mode === 'edit' ? 'update' : 'create'} monitor`
+            });
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
     }
 
+    const handleCopyWebhook = async (text: string) => {
+        await navigator.clipboard.writeText(text);
+        toast.success("Webhook URL copied to clipboard");
+    };
+
     return (
-        <form onSubmit={onSubmit} className="space-y-4 p-4">
+        <form onSubmit={onSubmit} className="space-y-6 p-4">
             <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium">
                     Account Name
@@ -58,6 +81,7 @@ export default function MonitorForm({ projectId, onSuccess }: MonitorFormProps) 
                     name="name"
                     placeholder="Enter account name"
                     required
+                    defaultValue={initialData?.account_name}
                 />
             </div>
 
@@ -65,8 +89,8 @@ export default function MonitorForm({ projectId, onSuccess }: MonitorFormProps) 
                 <label htmlFor="platform" className="text-sm font-medium">
                     Platform
                 </label>
-                <Select name="platform" required>
-                    <SelectTrigger  className="w-full">
+                <Select name="platform" required defaultValue={initialData?.platform}>
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select platform" />
                     </SelectTrigger>
                     <SelectContent>
@@ -80,30 +104,65 @@ export default function MonitorForm({ projectId, onSuccess }: MonitorFormProps) 
                 <label htmlFor="access_token" className="text-sm font-medium">
                     Access Token
                 </label>
-                <Input
-                    id="access_token"
-                    name="access_token"
-                    type="password"
-                    placeholder="Enter access token"
-                    required
-                />
+                <div className="relative">
+                    <Input
+                        id="access_token"
+                        name="access_token"
+                        type={showToken ? "text" : "password"}
+                        placeholder="Enter access token"
+                        required={mode === 'create'}
+                        defaultValue={initialData?.access_token}
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowToken(!showToken)}
+                    >
+                        {showToken ? (
+                            <EyeOffIcon className="h-4 w-4" />
+                        ) : (
+                            <EyeIcon className="h-4 w-4" />
+                        )}
+                    </Button>
+                </div>
             </div>
-
-            <div className="space-y-2">
-                <label htmlFor="webhook" className="text-sm font-medium">
-                    Webhook URL
-                </label>
-                <Input
-                    id="webhook"
-                    name="webhook"
-                    type="url"
-                    placeholder="https://your-webhook-url.com"
-                    required
-                />
-            </div>
+            {mode === 'edit' && (
+                <>
+                    <div className="space-y-2">
+                        <label htmlFor="webhook_receive" className="text-sm font-medium">
+                            Webhook Receive URL
+                        </label>
+                        <div className="relative group">
+                            <Input
+                                id="webhook_receive"
+                                name="webhook_receive"
+                                type="url"
+                                placeholder="Webhook receive URL will be generated automatically"
+                                disabled
+                                defaultValue={initialData?.webhook_receive}
+                                className="cursor-pointer"
+                                onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive)}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary"
+                                onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive)}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Creating..." : "Create Monitor"}
+                {loading 
+                    ? (mode === 'edit' ? "Updating..." : "Creating...") 
+                    : (mode === 'edit' ? "Update Monitor" : "Create Monitor")}
             </Button>
         </form>
     )

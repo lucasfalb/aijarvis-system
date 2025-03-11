@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import CommentsTable from "./_components/comments-table"
 
 interface MonitorPageProps {
   params: { 
@@ -14,9 +15,11 @@ interface MonitorPageProps {
 }
 
 export async function generateMetadata({ params }: MonitorPageProps): Promise<Metadata> {
-  const result = await getMonitor(params.monitorId);
+  const {monitorId} = await params;
   
-  if (!result.success) {
+  const result = await getMonitor(monitorId);
+  
+  if (!result.success || !result.monitor) {
     return { title: 'Monitor Not Found' }
   }
 
@@ -27,9 +30,11 @@ export async function generateMetadata({ params }: MonitorPageProps): Promise<Me
 }
 
 export default async function MonitorPage({ params }: MonitorPageProps) {
-  const result = await getMonitor(params.monitorId);
+  const {id, monitorId} = await params;
+  
+  const result = await getMonitor(monitorId);
 
-  if (!result.success) {
+  if (!result.success || !result.monitor) {
     notFound();
   }
 
@@ -38,7 +43,7 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={`/app/projects/${params.id}/monitors`}>
+        <Link href={`/app/projects/${id}/monitors`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -58,7 +63,7 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
           
           <div className="grid gap-2">
             <div className="text-sm font-medium">Webhook URL</div>
-            <div className="text-sm text-muted-foreground">{monitor.webhook}</div>
+            <div className="text-sm text-muted-foreground">{monitor.webhook_receive}</div>
           </div>
 
           <div className="grid gap-2">
@@ -69,11 +74,17 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
           </div>
 
           <div className="grid gap-2">
-            <div className="text-sm font-medium">Status</div>
+            <div className="text-sm font-medium">Last Updated</div>
             <div className="text-sm text-muted-foreground">
-              {monitor.status || 'Active'}
+              {new Date(monitor.updated_at || monitor.created_at).toLocaleString()}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <CommentsTable monitorId={monitorId} />
         </CardContent>
       </Card>
     </div>
