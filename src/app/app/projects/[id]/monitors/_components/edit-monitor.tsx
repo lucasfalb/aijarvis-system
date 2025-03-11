@@ -19,11 +19,13 @@ interface EditMonitorProps {
         access_token: string;
         platform: string;
         webhook_receive: string;
+        webhook_token: string;
     };
 }
 
 export default function EditMonitor({ projectId, monitor }: EditMonitorProps) {
     const [open, setOpen] = useState(false);
+    console.log(monitor)
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

@@ -12,7 +12,7 @@ export interface Monitor {
     platform: string;
     webhook_receive: string;
     webhook_send?: string;
-    status?: string;
+    webhook_token: string;
 }
 
 type MonitorActionResult = {
@@ -29,10 +29,14 @@ const generateWebhookReceive = (monitorId: string) => `${process.env.NEXT_PUBLIC
 // 🔧 Webhook Sender (fixo em nossa API)
 const WEBHOOK_SENDER = `${process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE}`;
 
+function generateWebhookToken(): string {
+    return crypto.randomUUID();
+}
+
 // ✅ Criar um novo monitor
 export async function createMonitor(formData: FormData): Promise<MonitorActionResult> {
     const supabase = await createClient();
-    console.log(WEBHOOK_SENDER)
+
     try {
         const { data: userData, error: authError } = await supabase.auth.getUser();
         if (authError || !userData?.user) throw new Error('Error - create a monitor');
@@ -60,6 +64,7 @@ export async function createMonitor(formData: FormData): Promise<MonitorActionRe
         }
 
         // ✅ Criar monitor sem webhook_receive ainda
+        const webhook_token = generateWebhookToken();
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
             .insert({
@@ -69,6 +74,7 @@ export async function createMonitor(formData: FormData): Promise<MonitorActionRe
                 platform,
                 webhook_receive: '', // Inicialmente vazio
                 webhook_send: WEBHOOK_SENDER, // Webhook de saída fixo
+                webhook_token, // Adicionar token de verificação
             })
             .select()
             .single();
@@ -84,13 +90,12 @@ export async function createMonitor(formData: FormData): Promise<MonitorActionRe
 
         if (updateError) throw updateError;
 
-        return { success: true, monitor: { ...monitor, webhook_receive } };
+        return { success: true, monitor: { ...monitor, webhook_receive, webhook_token } };
     } catch (error) {
         console.error('Error creating monitor:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to create monitor' };
     }
 }
-
 // ✅ Atualizar um monitor
 export async function updateMonitor(monitorId: string, formData: FormData): Promise<MonitorActionResult> {
     const supabase = await createClient();
@@ -194,7 +199,6 @@ export async function deleteMonitor(monitorId: string): Promise<MonitorActionRes
         return { success: false, error: error instanceof Error ? error.message : 'Failed to delete monitor' };
     }
 }
-
 // ✅ Buscar um monitor específico
 export async function getMonitor(monitorId: string): Promise<MonitorActionResult> {
     const supabase = await createClient();
@@ -202,12 +206,12 @@ export async function getMonitor(monitorId: string): Promise<MonitorActionResult
     try {
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
-            .select('*')
+            .select('*') // Incluindo webhook_token
             .eq('id', monitorId)
             .single();
 
         if (monitorError) throw monitorError;
-        return { success: true, monitor: monitor as Monitor };
+        return { success: true, monitor };
     } catch (error) {
         console.error('Error fetching monitor:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch monitor' };
@@ -221,13 +225,13 @@ export async function getMonitors(projectId: string): Promise<MonitorActionResul
     try {
         const { data: monitors, error: monitorsError } = await supabase
             .from('monitors')
-            .select('*')
+            .select('*') // Incluindo webhook_token
             .eq('project_id', projectId)
             .order('created_at', { ascending: false });
 
         if (monitorsError) throw monitorsError;
 
-        return { success: true, monitors: monitors as Monitor[] };
+        return { success: true, monitors };
     } catch (error) {
         console.error('Error fetching monitors:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch monitors' };

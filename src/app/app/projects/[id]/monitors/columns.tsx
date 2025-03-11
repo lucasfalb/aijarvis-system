@@ -24,6 +24,7 @@ export type Monitor = {
   created_at: string
   updated_at: string
   webhook_receive: string
+  webhook_token: string
   project_id: string
 }
 
@@ -82,6 +83,7 @@ const ActionsCell = ({ row }: { row: Row<Monitor> }) => {
               access_token: monitor.access_token,
               platform: monitor.platform,
               webhook_receive: monitor.webhook_receive,
+              webhook_token: monitor.webhook_token,
             }}
           />
         </DropdownMenuItem>

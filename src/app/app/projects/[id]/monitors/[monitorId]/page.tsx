@@ -66,6 +66,11 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
           </div>
 
           <div className="grid gap-2">
+            <div className="text-sm font-medium">Verification Token</div>
+            <div className="text-sm text-muted-foreground">{monitor.webhook_token}</div>
+          </div>
+
+          <div className="grid gap-2">
             <div className="text-sm font-medium">Created At</div>
             <div className="text-sm text-muted-foreground">
               {new Date(monitor.created_at).toLocaleString()}

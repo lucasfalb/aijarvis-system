@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-// 🔧 Função auxiliar para encaminhar os dados ao webhook_send
+// 🔧 Encaminhar os dados ao webhook_send
 async function forwardToWebhook(webhookUrl: string, payload: object) {
     try {
         const response = await fetch(webhookUrl, {
@@ -20,26 +20,63 @@ async function forwardToWebhook(webhookUrl: string, payload: object) {
     }
 }
 
-// ✅ API para receber webhooks e encaminhar os dados
-export async function POST(req: NextRequest, props: { params: Promise<{ monitorId: string }> }) {
-    const params = await props.params;
-    const supabase = await createClient();
+// ✅ Verificação do Webhook (GET)
+export async function GET(req: NextRequest, { params }: { params: { monitorId: string } }) {
     const monitorId = params.monitorId;
+    const searchParams = req.nextUrl.searchParams;
+
+    const mode = searchParams.get("hub.mode");
+    const token = searchParams.get("hub.verify_token");
+    const challenge = searchParams.get("hub.challenge");
+
+    if (!mode || !token || !challenge) {
+        return NextResponse.json({ success: false, error: "Invalid verification request" }, { status: 400 });
+    }
+
+    const supabase = await createClient();
+    const { data: monitor, error } = await supabase
+        .from('monitors')
+        .select('webhook_token')
+        .eq('id', monitorId)
+        .single();
+
+    if (error || !monitor) {
+        return NextResponse.json({ success: false, error: "Monitor not found" }, { status: 404 });
+    }
+
+    if (mode === "subscribe" && token === monitor.webhook_token) {
+        return new Response(challenge, { status: 200 });
+    }
+
+    return NextResponse.json({ success: false, error: "Verification failed" }, { status: 403 });
+}
+
+// ✅ Recebimento e Processamento do Webhook (POST)
+export async function POST(req: NextRequest, { params }: { params: { monitorId: string } }) {
+    const monitorId = params.monitorId;
+    const supabase = await createClient();
 
     try {
-        const body = await req.json();
-        console.log(`📩 Webhook recebido para Monitor ${monitorId}:`, body);
-
-        // ✅ Buscar detalhes do monitor
+        // ✅ Buscar monitor e verificar `webhook_token`
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
-            .select('id, account_name, platform, webhook_send')
+            .select('id, account_name, platform, webhook_send, webhook_token')
             .eq('id', monitorId)
             .single();
 
         if (monitorError || !monitor) {
             return NextResponse.json({ success: false, error: 'Monitor not found' }, { status: 404 });
         }
+
+        // ✅ Verificar `webhook_token` no cabeçalho da requisição
+        const token = req.headers.get('x-webhook-token');
+        if (!token || token !== monitor.webhook_token) {
+            return NextResponse.json({ success: false, error: 'Invalid webhook token' }, { status: 403 });
+        }
+
+        // ✅ Processar os dados recebidos
+        const body = await req.json();
+        console.log(`📩 Webhook recebido para Monitor ${monitorId}:`, body);
 
         // ✅ Criar payload final com dados do monitor
         const payload = {
@@ -50,7 +87,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ monitorI
             data: body, // Dados recebidos no webhook
         };
 
-        // ✅ Encaminhar para webhook_send
+        // ✅ Encaminhar para webhook_send (se configurado)
         if (monitor.webhook_send) {
             await forwardToWebhook(monitor.webhook_send, payload);
         }

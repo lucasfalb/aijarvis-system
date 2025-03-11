@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { EyeIcon, EyeOffIcon, Copy } from "lucide-react";
 
+// Update the interface to include webhook_token
 interface MonitorFormProps {
     projectId: string;
     onSuccess?: () => void;
@@ -24,6 +25,7 @@ interface MonitorFormProps {
         access_token: string;
         platform: string;
         webhook_receive: string;
+        webhook_token: string; 
     };
     mode?: 'create' | 'edit';
 }
@@ -32,6 +34,9 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [showToken, setShowToken] = useState(false);
+
+    // Add this console.log to debug
+    console.log('initialData:', initialData);
 
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -151,6 +156,33 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
                                 size="sm"
                                 className="absolute right-0 top-0 h-full px-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary"
                                 onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive)}
+                            >
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label htmlFor="webhook_token" className="text-sm font-medium">
+                           Verification Token
+                        </label>
+                        <div className="relative group">
+                            <Input
+                                id="webhook_token"
+                                name="webhook_token"
+                                type="text"
+                                placeholder="Webhook token will be generated automatically"
+                                disabled
+                                value={initialData?.webhook_token || ''}  // Change defaultValue to value
+                                className="cursor-pointer"
+                                onClick={() => initialData?.webhook_token && handleCopyWebhook(initialData.webhook_token)}
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary"
+                                onClick={() => initialData?.webhook_token && handleCopyWebhook(initialData.webhook_token)}
                             >
                                 <Copy className="h-4 w-4" />
                             </Button>
