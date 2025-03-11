@@ -52,17 +52,22 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
   const onSubmit = handleSubmit(async (data) => {
     setError("") // Reset error state
     setSuccess(false) // Reset success state
-
-    const formData = new FormData()
-    formData.append("email", data.email)
-    formData.append("password", data.password)
-
-    const result = await signUp(formData)
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setSuccess(true)
-      reset() // Reset form fields
+  
+    try {
+      const formData = new FormData()
+      formData.append("email", data.email)
+      formData.append("password", data.password)
+  
+      const result = await signUp(formData)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        setSuccess(true)
+        reset() // Reset form fields
+      }
+    } catch (err) {
+      setError("Failed to create account. Please try again later.")
+      console.error("Sign up error:", err)
     }
   })
 
