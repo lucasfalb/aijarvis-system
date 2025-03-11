@@ -68,14 +68,9 @@ export async function POST(req: NextRequest, { params }: { params: { monitorId: 
             return NextResponse.json({ success: false, error: 'Monitor not found' }, { status: 404 });
         }
 
-        // ✅ Verificar `webhook_token` no cabeçalho da requisição
-        const token = req.headers.get('x-webhook-token');
-        if (!token || token !== monitor.webhook_token) {
-            return NextResponse.json({ success: false, error: 'Invalid webhook token' }, { status: 403 });
-        }
-
         // ✅ Processar os dados recebidos
         const body = await req.json();
+        
         console.log(`📩 Webhook recebido para Monitor ${monitorId}:`, body);
 
         // ✅ Criar payload final com dados do monitor
