@@ -20,7 +20,7 @@ export default async function ProjectsPage() {
     const typedProjects = (projects as unknown) as Project[];
 
     return (
-        <div className="container py-8">
+        <div className="container">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">Projects</h1>
                 <CreateNewProject />
