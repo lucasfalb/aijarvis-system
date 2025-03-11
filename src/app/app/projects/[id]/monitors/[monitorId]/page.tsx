@@ -1,37 +1,36 @@
-import { Metadata } from "next"
-import { notFound } from "next/navigation"
-import { getMonitor } from "@/lib/actions/monitor"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import CommentsTable from "./_components/comments-table"
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getMonitor } from "@/lib/actions/monitor";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import CommentsTable from "./_components/comments-table";
 
 interface MonitorPageProps {
-  params: { 
-    id: string;
-    monitorId: string;
-  }
+  params: Promise<{ id: string; monitorId: string }>;
 }
 
 export async function generateMetadata({ params }: MonitorPageProps): Promise<Metadata> {
-  const {monitorId} = await params;
-  
+  const resolvedParams = await params;
+  const { monitorId } = resolvedParams;
+
   const result = await getMonitor(monitorId);
-  
+
   if (!result.success || !result.monitor) {
-    return { title: 'Monitor Not Found' }
+    return { title: "Monitor Not Found" };
   }
 
   return {
     title: `${result.monitor.account_name} - Monitor`,
     description: `Monitor details for ${result.monitor.account_name}`,
-  }
+  };
 }
 
 export default async function MonitorPage({ params }: MonitorPageProps) {
-  const {id, monitorId} = await params;
-  
+  const resolvedParams = await params; 
+  const { id, monitorId } = resolvedParams;
+
   const result = await getMonitor(monitorId);
 
   if (!result.success || !result.monitor) {
@@ -60,7 +59,7 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
             <div className="text-sm font-medium">Platform</div>
             <div className="text-sm text-muted-foreground">{monitor.platform}</div>
           </div>
-          
+
           <div className="grid gap-2">
             <div className="text-sm font-medium">Webhook URL</div>
             <div className="text-sm text-muted-foreground">{monitor.webhook_receive}</div>
@@ -88,5 +87,5 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

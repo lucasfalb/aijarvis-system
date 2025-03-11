@@ -1,18 +1,19 @@
-import { Metadata } from "next"
-import { notFound } from "next/navigation"
-import CreateNewMonitor from "./_components/create-new-monitor"
-import { getMonitors } from "@/lib/actions/monitor"
-import { getProject } from "@/lib/actions/project"
-import { DataTable } from "@/components/data-table"
-import { columns } from "./columns"
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import CreateNewMonitor from "./_components/create-new-monitor";
+import { getMonitors } from "@/lib/actions/monitor";
+import { getProject } from "@/lib/actions/project";
+import { DataTable } from "@/components/data-table";
+import { columns } from "./columns";
 
-export default async function MonitorsPage({
-  params
-}: {
-  params: { id: string }
-}) {
-  const {id} = await params;
-  
+interface MonitorsPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function MonitorsPage({ params }: MonitorsPageProps) {
+  const resolvedParams = await params; 
+  const { id } = resolvedParams;
+
   const projectResult = await getProject(id);
   if (!projectResult.success || !projectResult.project) {
     notFound();
@@ -20,10 +21,12 @@ export default async function MonitorsPage({
 
   const { success, monitors, error } = await getMonitors(id);
   if (!success) {
-    console.error('Error loading monitors:', error);
-    return <div>Error: {error}</div>
+    console.error("Error loading monitors:", error);
+    return <div>Error: {error}</div>;
   }
+
   const projectMonitors = monitors || [];
+
   return (
     <div className="container py-8">
       <div className="flex items-center justify-between mb-8">
@@ -44,24 +47,21 @@ export default async function MonitorsPage({
         showPaginationOnLength={10}
       />
     </div>
-  )
+  );
 }
 
-export async function generateMetadata({
-  params
-}: {
-  params: { id: string }
-}): Promise<Metadata> {
-  const {id} = await params;
-  
-  const result = await getProject(id)
+export async function generateMetadata({ params }: MonitorsPageProps): Promise<Metadata> {
+  const resolvedParams = await params; 
+  const { id } = resolvedParams;
+
+  const result = await getProject(id);
 
   if (!result.success || !result.project) {
-    return { title: 'Monitors - Not Found' }
+    return { title: "Monitors - Not Found" };
   }
 
   return {
     title: `Monitors - ${result.project.name}`,
     description: `Monitor list for project ${result.project.name}`,
-  }
+  };
 }

@@ -21,7 +21,8 @@ async function forwardToWebhook(webhookUrl: string, payload: object) {
 }
 
 // ✅ API para receber webhooks e encaminhar os dados
-export async function POST(req: NextRequest, { params }: { params: { monitorId: string } }) {
+export async function POST(req: NextRequest, props: { params: Promise<{ monitorId: string }> }) {
+    const params = await props.params;
     const supabase = await createClient();
     const monitorId = params.monitorId;
 
