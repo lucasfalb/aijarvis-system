@@ -3,6 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
+  }, 
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // Permite qualquer domínio HTTPS
+      },
+    ],
   },
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,

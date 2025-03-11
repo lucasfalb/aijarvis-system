@@ -29,6 +29,7 @@ interface DataTableProps<TData, TValue> {
   searchKey: string
   pageSize?: number
   showPaginationOnLength?: number
+  meta?: Record<string, unknown> 
 }
 
 export function DataTable<TData, TValue>({
@@ -36,6 +37,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   pageSize = 10,
+  meta,
   showPaginationOnLength = 10,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])

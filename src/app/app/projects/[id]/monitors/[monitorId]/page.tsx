@@ -88,7 +88,10 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
 
       <Card>
         <CardContent>
-          <CommentsTable monitorId={monitorId} />
+          <CommentsTable 
+            monitorId={monitorId} 
+            access_token={monitor.access_token || ''} 
+          />
         </CardContent>
       </Card>
     </div>

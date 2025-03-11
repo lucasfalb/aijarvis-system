@@ -10,13 +10,26 @@ import { Comment } from "@/lib/types/database"
 
 interface CommentsTableProps {
   monitorId: string;
+  access_token: string;
 }
 
-export default function CommentsTable({ monitorId }: CommentsTableProps) {
+export default function CommentsTable({ monitorId, access_token }: CommentsTableProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
 
+  useEffect(() => {
+    if (!access_token) {
+      console.error("Access token is missing");
+      return;
+    }
+  }, [access_token]);
+  console.log(access_token)
   const fetchComments = useCallback(async () => {
+    if (!access_token) {
+      console.error("Access token is missing");
+      return;
+    }
+
     setLoading(true)
     try {
       const result = await getComments(monitorId)
@@ -28,18 +41,23 @@ export default function CommentsTable({ monitorId }: CommentsTableProps) {
     } finally {
       setLoading(false)
     }
-  }, [monitorId])
+  }, [monitorId, access_token])
 
   useEffect(() => {
     fetchComments()
   }, [fetchComments])
+
+  if (!access_token) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Comments</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           onClick={fetchComments}
           disabled={loading}
         >
@@ -48,10 +66,11 @@ export default function CommentsTable({ monitorId }: CommentsTableProps) {
         </Button>
       </div>
       <DataTable
-        columns={columns}
+        columns={columns(access_token)}
         data={comments}
-        searchKey="content"
+        searchKey="username"
       />
+
     </div>
   )
 }

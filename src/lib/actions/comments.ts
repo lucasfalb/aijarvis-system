@@ -9,9 +9,8 @@ type CommentActionResult = {
     error?: string;
 };
 
-
 // ✅ Obter um único comentário pelo ID
-export async function getComment(commentId: string): Promise<CommentActionResult> {
+export async function getComment(commentId: number): Promise<CommentActionResult> {
     const supabase = await createClient();
 
     try {
@@ -50,17 +49,74 @@ export async function getComments(monitorId: string): Promise<CommentActionResul
     }
 }
 
-// ✅ Atualizar o status de um comentário
-export async function updateCommentStatus(commentId: string, status: string): Promise<CommentActionResult> {
+// ✅ Atualizar o status de um comentário e enviar resposta ao webhook
+export async function updateCommentStatus(
+    commentId: string,
+    replyText: string
+): Promise<CommentActionResult> {
     const supabase = await createClient();
+    const WEBHOOK_SENDER = `${process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE}`;
 
     try {
-        const { error } = await supabase
+        // Get comment details
+        const { data: comment, error: commentError } = await supabase
             .from('comments')
-            .update({ status })
+            .select('id, text, username, media_id, monitor_id')
+            .eq('id', commentId)
+            .single();
+
+        if (commentError || !comment) {
+            throw new Error("Comment not found");
+        }
+
+        // Get monitor details including access_token
+        const { data: monitor, error: monitorError } = await supabase
+            .from('monitors')
+            .select('id, account_name, platform, webhook_send, access_token')
+            .eq('id', comment.monitor_id)
+            .single();
+
+        if (monitorError || !monitor) {
+            throw new Error("Monitor not found");
+        }
+
+        if (!monitor.access_token) {
+            throw new Error("Monitor access token not found");
+        }
+
+        const payload = {
+            methodResponse: 'reply',
+            commentId: comment.id,
+            originalText: comment.text,
+            repliedText: replyText,
+            username: comment.username,
+            mediaId: comment.media_id,
+            monitor: {
+                id: monitor.id,
+                account_name: monitor.account_name,
+                platform: monitor.platform,
+                access_token: monitor.access_token
+            },
+        };
+
+        // ✅ Enviar resposta ao webhook
+        const response = await fetch(WEBHOOK_SENDER, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Webhook request failed with status: ${response.status}`);
+        }
+
+        // ✅ Atualizar status do comentário somente se o POST retornar 200
+        const { error: updateError } = await supabase
+            .from('comments')
+            .update({ status: 'responded' })
             .eq('id', commentId);
 
-        if (error) throw error;
+        if (updateError) throw updateError;
 
         return { success: true };
     } catch (error) {
@@ -69,8 +125,9 @@ export async function updateCommentStatus(commentId: string, status: string): Pr
     }
 }
 
+
 // ✅ Deletar um comentário
-export async function deleteComment(commentId: string): Promise<CommentActionResult> {
+export async function deleteComment(commentId: number): Promise<CommentActionResult> {
     const supabase = await createClient();
 
     try {
@@ -85,7 +142,7 @@ export async function deleteComment(commentId: string): Promise<CommentActionRes
 }
 
 // ✅ Adicionar tags a um comentário
-export async function addCommentTag(commentId: string, tag: string): Promise<CommentActionResult> {
+export async function addCommentTag(commentId: number, tag: string): Promise<CommentActionResult> {
     const supabase = await createClient();
 
     try {
