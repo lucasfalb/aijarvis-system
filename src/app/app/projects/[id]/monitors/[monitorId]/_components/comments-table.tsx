@@ -17,13 +17,6 @@ export default function CommentsTable({ monitorId, access_token }: CommentsTable
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (!access_token) {
-      console.error("Access token is missing");
-      return;
-    }
-  }, [access_token]);
-  console.log(access_token)
   const fetchComments = useCallback(async () => {
     if (!access_token) {
       console.error("Access token is missing");

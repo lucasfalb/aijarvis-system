@@ -25,7 +25,6 @@ interface EditMonitorProps {
 
 export default function EditMonitor({ projectId, monitor }: EditMonitorProps) {
     const [open, setOpen] = useState(false);
-    console.log(monitor)
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>

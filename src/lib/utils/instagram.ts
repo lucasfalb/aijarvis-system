@@ -14,7 +14,7 @@ export async function getInstagramMedia(mediaId: string, accessToken: string) {
       data
     };
   } catch (error) {
-    console.error('Error fetching Instagram media:', error);
+    {/*console.error('Error fetching Instagram media:', error);*/}
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch media'

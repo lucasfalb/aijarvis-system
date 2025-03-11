@@ -35,9 +35,6 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
     const [loading, setLoading] = useState(false);
     const [showToken, setShowToken] = useState(false);
 
-    // Add this console.log to debug
-    console.log('initialData:', initialData);
-
     async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setLoading(true);

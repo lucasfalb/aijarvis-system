@@ -37,7 +37,6 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   pageSize = 10,
-  meta,
   showPaginationOnLength = 10,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
