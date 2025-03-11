@@ -290,7 +290,7 @@ export async function removeProjectMember(projectId: string, userId: string) {
 
     const user = userData.user;
 
-    // ✅ Check if the current user is an admin
+    // ✅ Verifica se o usuário atual é admin
     const { data: userProject, error: roleError } = await supabase
       .from('user_projects')
       .select('role')
@@ -302,7 +302,35 @@ export async function removeProjectMember(projectId: string, userId: string) {
       throw new Error("Only admins can remove members.");
     }
 
-    // ✅ Remove the user from the project
+    // ✅ Verifica o papel do usuário que está sendo removido
+    const { data: targetUserProject, error: targetRoleError } = await supabase
+      .from('user_projects')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('project_id', projectId)
+      .single();
+
+    if (targetRoleError || !targetUserProject) {
+      throw new Error("User not found in project.");
+    }
+
+    // ✅ Conta quantos admins existem no projeto
+    const { count: totalAdmins, error: adminError } = await supabase
+      .from('user_projects')
+      .select('user_id', { count: 'exact' }) // Conta corretamente os admins
+      .eq('project_id', projectId)
+      .eq('role', 'admin');
+
+    if (adminError) throw adminError;
+
+    const adminCount = totalAdmins ?? 0; // Garante que nunca será null
+
+    // ✅ Impede a remoção do último admin
+    if (targetUserProject.role === 'admin' && adminCount <= 1) {
+      throw new Error("You cannot remove the last admin. The project must have at least one admin.");
+    }
+
+    // ✅ Remove o usuário do projeto
     const { error } = await supabase
       .from('user_projects')
       .delete()
@@ -318,8 +346,11 @@ export async function removeProjectMember(projectId: string, userId: string) {
   }
 }
 
-// ✅ Update a member's role in a project
-export async function updateMemberRole(projectId: string, userId: string, newRole: 'viewer' | 'editor' | 'admin') {
+export async function updateMemberRole(
+  projectId: string,
+  userId: string,
+  newRole: 'viewer' | 'editor' | 'admin'
+) {
   const supabase = await createClient();
 
   try {
@@ -328,7 +359,7 @@ export async function updateMemberRole(projectId: string, userId: string, newRol
 
     const user = userData.user;
 
-    // Check if current user is admin
+    // Verifica se o usuário atual é admin no projeto
     const { data: userProject, error: roleError } = await supabase
       .from('user_projects')
       .select('role')
@@ -340,7 +371,23 @@ export async function updateMemberRole(projectId: string, userId: string, newRol
       throw new Error("Only admins can update member roles");
     }
 
-    // Update member role
+    // Conta quantos admins existem no projeto
+    const { count, error: adminError } = await supabase
+      .from('user_projects')
+      .select('user_id', { count: 'exact' }) // Contando corretamente os admins
+      .eq('project_id', projectId)
+      .eq('role', 'admin');
+
+    if (adminError) throw adminError;
+
+    const totalAdmins = count ?? 0; // Garantindo que nunca será null
+
+    // Impede a remoção do último admin
+    if (userId === user.id && userProject.role === 'admin' && newRole !== 'admin' && totalAdmins <= 1) {
+      throw new Error("You cannot remove yourself as admin. The project must have at least one admin.");
+    }
+
+    // Atualiza o cargo do membro
     const { error } = await supabase
       .from('user_projects')
       .update({ role: newRole })

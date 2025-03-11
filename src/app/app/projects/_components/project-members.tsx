@@ -74,13 +74,13 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
     try {
       const response = await removeProjectMember(projectId, userId);
       if (!response.success) throw new Error(response.error);
-
+  
       toast.success("Member removed successfully");
       setMembers(members.filter((m) => m.user_id !== userId));
       router.refresh();
     } catch (error) {
       console.error("Error removing member:", error);
-      toast.error("Failed to remove member");
+      toast.error(error instanceof Error ? error.message : "Failed to remove member");
     }
   }
 
@@ -96,7 +96,7 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
       router.refresh();
     } catch (error) {
       console.error("Error updating role:", error);
-      toast.error("Failed to update role");
+      toast.error(error instanceof Error ? error.message : "Failed to update role");
     }
   }
 
