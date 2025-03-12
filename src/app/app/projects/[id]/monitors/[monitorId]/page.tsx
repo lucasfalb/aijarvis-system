@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import CommentsTable from "./_components/comments-table";
+import CopyButton from "./_components/copy-button";
 
 interface MonitorPageProps {
   params: Promise<{ id: string; monitorId: string }>;
@@ -62,12 +63,28 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
 
           <div className="grid gap-2">
             <div className="text-sm font-medium">Webhook URL</div>
-            <div className="text-sm text-muted-foreground">{monitor.webhook_receive}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground truncate">
+                {monitor.webhook_receive}
+              </div>
+              <CopyButton 
+                value={monitor.webhook_receive} 
+                label="Webhook URL" 
+              />
+            </div>
           </div>
 
           <div className="grid gap-2">
             <div className="text-sm font-medium">Verification Token</div>
-            <div className="text-sm text-muted-foreground">{monitor.webhook_token}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground truncate">
+                {monitor.webhook_token}
+              </div>
+              <CopyButton 
+                value={monitor.webhook_token} 
+                label="Verification Token" 
+              />
+            </div>
           </div>
 
           <div className="grid gap-2">

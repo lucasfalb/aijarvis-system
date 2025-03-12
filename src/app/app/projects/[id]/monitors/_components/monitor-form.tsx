@@ -67,9 +67,9 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
         }
     }
 
-    const handleCopyWebhook = async (text: string) => {
+    const handleCopyWebhook = async (text: string, type: 'webhook' | 'token') => {
         await navigator.clipboard.writeText(text);
-        toast.success("Webhook URL copied to clipboard");
+        toast.success(`${type === 'webhook' ? 'Webhook URL' : 'Verification Token'} copied to clipboard`);
     };
 
     return (
@@ -145,14 +145,13 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
                                 disabled
                                 defaultValue={initialData?.webhook_receive}
                                 className="cursor-pointer"
-                                onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive)}
                             />
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 className="absolute right-0 top-0 h-full px-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary"
-                                onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive)}
+                                onClick={() => initialData?.webhook_receive && handleCopyWebhook(initialData.webhook_receive, 'webhook')}
                             >
                                 <Copy className="h-4 w-4" />
                             </Button>
@@ -170,16 +169,15 @@ export default function MonitorForm({ projectId, onSuccess, initialData, mode = 
                                 type="text"
                                 placeholder="Webhook token will be generated automatically"
                                 disabled
-                                value={initialData?.webhook_token || ''}  // Change defaultValue to value
+                                value={initialData?.webhook_token || ''} 
                                 className="cursor-pointer"
-                                onClick={() => initialData?.webhook_token && handleCopyWebhook(initialData.webhook_token)}
                             />
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
                                 className="absolute right-0 top-0 h-full px-3 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-secondary"
-                                onClick={() => initialData?.webhook_token && handleCopyWebhook(initialData.webhook_token)}
+                                onClick={() => initialData?.webhook_token && handleCopyWebhook(initialData.webhook_token, 'token')}
                             >
                                 <Copy className="h-4 w-4" />
                             </Button>

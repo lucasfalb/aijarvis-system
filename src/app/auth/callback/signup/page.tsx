@@ -20,7 +20,7 @@ export default function SignUpCallback() {
     }
 
     handleAuth()
-  }, [])
+  }, [router]) // Added router to the dependency array
 
   return null
 }
