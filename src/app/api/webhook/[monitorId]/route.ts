@@ -78,6 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: { monitorId: 
             monitorId,
             account_name: monitor.account_name,
             platform: monitor.platform,
+            access_token: monitor.webhook_token,
             received_at: new Date().toISOString(),
             data: body, // Dados recebidos no webhook
         };
