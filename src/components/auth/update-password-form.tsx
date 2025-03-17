@@ -12,20 +12,22 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 
-export function UpdatePasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+interface UpdatePasswordFormProps extends React.ComponentProps<"div"> {
+  token: string
+}
+
+export function UpdatePasswordForm({ className, token, ...props }: UpdatePasswordFormProps) {
   const [error, setError] = useState<string>("")
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const code = searchParams.get("token")
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError("")
 
     const formData = new FormData(event.currentTarget)
-    const result = await updatePassword(formData, code)
+    const result = await updatePassword(formData, token)
 
     if (result.error) {
       setError(result.error)
