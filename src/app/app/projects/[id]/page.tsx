@@ -81,11 +81,11 @@ export default async function ProjectPage({
               </div>
               <div className="flex items-center text-sm">
                 <RefreshCw className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>Last Updated: {new Date(project.created_at).toLocaleDateString('pt-BR', {
+                <span>Last Updated: {new Date(project.updated_at).toLocaleDateString('pt-BR', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
-                })} {new Date(project.created_at).toLocaleTimeString('pt-BR', {
+                })} {new Date(project.updated_at).toLocaleTimeString('pt-BR', {
                   hour: '2-digit',
                   minute: '2-digit',
                   second: '2-digit',

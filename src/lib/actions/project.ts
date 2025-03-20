@@ -12,6 +12,7 @@ export async function getProject(projectId: string) {
   const supabase = await createClient();
 
   try {
+    // ✅ Obtém o usuário autenticado
     const { data: userData, error: authError } = await supabase.auth.getUser();
     if (authError || !userData?.user) throw new Error("Please sign in to view this project");
 
@@ -29,10 +30,10 @@ export async function getProject(projectId: string) {
       throw new Error("You do not have permission to access this project.");
     }
 
-    // ✅ Busca os detalhes do projeto
+    // ✅ Busca os detalhes do projeto, incluindo `updated_at`
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('id, name, description, created_at')
+      .select('id, name, description, created_at, updated_at') // Agora inclui `updated_at`
       .eq('id', projectId)
       .single();
 
@@ -95,12 +96,13 @@ export async function updateProject(projectId: string, formData: FormData): Prom
   const supabase = await createClient();
 
   try {
+    // ✅ Obtém o usuário autenticado
     const { data: userData, error: authError } = await supabase.auth.getUser();
     if (authError || !userData?.user) throw new Error("Please sign in to update a project");
 
     const user = userData.user;
 
-    // ✅ Check if user is admin
+    // ✅ Verifica se o usuário tem permissão de admin no projeto
     const { data: userProject, error: roleError } = await supabase
       .from('user_projects')
       .select('role')
@@ -112,19 +114,23 @@ export async function updateProject(projectId: string, formData: FormData): Prom
       throw new Error("You do not have permission to update this project.");
     }
 
-    // ✅ Update project
-    const { error: updateError } = await supabase
+    // ✅ Atualiza o projeto, incluindo `updated_at`
+    const { data, error: updateError } = await supabase
       .from('projects')
       .update({
         name: formData.get('name') as string,
         description: formData.get('description') as string,
+        updated_at: new Date().toISOString(), // Atualiza `updated_at`
       })
-      .eq('id', projectId);
+      .eq('id', projectId)
+      .select('id, name, description, updated_at') // Retorna os dados atualizados
+      .single();
 
     if (updateError) throw updateError;
-    return { success: true, project: { id: projectId, name: formData.get('name') as string, description: formData.get('description') as string } };
+
+    return { success: true, project: data };
   } catch (error) {
-    console.error('Error updating project:', error);
+    console.error('❌ Error updating project:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to update project' };
   }
 }
