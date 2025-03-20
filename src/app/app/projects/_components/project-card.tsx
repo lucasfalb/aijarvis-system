@@ -30,7 +30,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             new Promise(async (resolve, reject) => {
               try {
                 // In handleDelete function, update the success handling
-                const result = await deleteProject(project.id);
+                const result = await deleteProject(String(project.id));
                 if (!result.success) {
                   throw new Error(result.error);
                 }
@@ -63,13 +63,17 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground">
-            Created: {project.created_at ? new Date(project.created_at).toLocaleDateString() : "N/A"}
+            Created: {project.created_at ? new Date(project.created_at).toLocaleDateString('pt-BR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            }) : "N/A"}
           </div>
         </CardContent>
       </Link>
       <CardFooter className="flex justify-end gap-2">
         <EditProject project={{
-          id: project.id,
+          id: String(project.id),
           name: project.name,
           description: project.description || undefined
         }} />

@@ -58,6 +58,13 @@ export async function updateCommentStatus(
     const WEBHOOK_SENDER = `${process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE}`;
 
     try {
+        // Get the current user from the server session
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+            throw new Error("User not authenticated");
+        }
+
         // Get comment details
         const { data: comment, error: commentError } = await supabase
             .from('comments')
@@ -84,6 +91,13 @@ export async function updateCommentStatus(
             throw new Error("Monitor access token not found");
         }
 
+        // Get additional user profile information if needed
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('id', user.id)
+            .single();
+
         const payload = {
             methodResponse: 'reply',
             commentId: comment.id,
@@ -97,6 +111,12 @@ export async function updateCommentStatus(
                 platform: monitor.platform,
                 access_token: monitor.access_token
             },
+            user: {
+                id: user.id,
+                email: user.email,
+                name: profile?.full_name || user.email?.split('@')[0] || 'Unknown User',
+                avatar: profile?.avatar_url
+            }
         };
 
         // ✅ Enviar resposta ao webhook
@@ -113,7 +133,10 @@ export async function updateCommentStatus(
         // ✅ Atualizar status do comentário somente se o POST retornar 200
         const { error: updateError } = await supabase
             .from('comments')
-            .update({ status: 'responded' })
+            .update({ 
+                status: 'responded',
+                generate_response: replyText,
+            })
             .eq('id', commentId);
 
         if (updateError) throw updateError;

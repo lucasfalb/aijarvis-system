@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: MonitorPageProps): Promise<Me
 }
 
 export default async function MonitorPage({ params }: MonitorPageProps) {
-  const resolvedParams = await params; 
+  const resolvedParams = await params;
   const { id, monitorId } = resolvedParams;
 
   const result = await getMonitor(monitorId);
@@ -43,7 +43,7 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={`/app/projects/${id}/monitors`}>
+        <Link href={`/app/projects/${id}`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -67,9 +67,9 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
               <div className="text-sm text-muted-foreground truncate">
                 {monitor.webhook_receive}
               </div>
-              <CopyButton 
-                value={monitor.webhook_receive} 
-                label="Webhook URL" 
+              <CopyButton
+                value={monitor.webhook_receive}
+                label="Webhook URL"
               />
             </div>
           </div>
@@ -80,9 +80,9 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
               <div className="text-sm text-muted-foreground truncate">
                 {monitor.webhook_token}
               </div>
-              <CopyButton 
-                value={monitor.webhook_token} 
-                label="Verification Token" 
+              <CopyButton
+                value={monitor.webhook_token}
+                label="Verification Token"
               />
             </div>
           </div>
@@ -90,14 +90,26 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
           <div className="grid gap-2">
             <div className="text-sm font-medium">Created At</div>
             <div className="text-sm text-muted-foreground">
-              {new Date(monitor.created_at).toLocaleString()}
+              {new Date(monitor.created_at).toLocaleDateString('pt-BR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+              })}
             </div>
           </div>
 
           <div className="grid gap-2">
             <div className="text-sm font-medium">Last Updated</div>
             <div className="text-sm text-muted-foreground">
-              {new Date(monitor.updated_at || monitor.created_at).toLocaleString()}
+              {new Date(monitor.updated_at || monitor.created_at).toLocaleString('pt-BR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              })}
             </div>
           </div>
         </CardContent>
@@ -105,9 +117,9 @@ export default async function MonitorPage({ params }: MonitorPageProps) {
 
       <Card>
         <CardContent>
-          <CommentsTable 
-            monitorId={monitorId} 
-            access_token={monitor.access_token || ''} 
+          <CommentsTable
+            monitorId={monitorId}
+            access_token={monitor.access_token || ''}
           />
         </CardContent>
       </Card>

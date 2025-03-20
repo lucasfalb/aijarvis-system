@@ -16,7 +16,6 @@ export default async function ProjectsPage() {
         return <div className="text-red-500">Error loading projects.</div>;
     }
 
-    // Type assertion to ensure projects match the Project type
     const typedProjects = (projects as unknown) as Project[];
 
     return (

@@ -38,11 +38,22 @@ export default function CommentsTable({ monitorId, access_token }: CommentsTable
     }
   }, [monitorId, access_token])
 
+  // Add a function to update a comment's status in the local state
+  const updateCommentStatus = useCallback((commentId: string, status: string) => {
+    setComments(prevComments =>
+      prevComments.map(comment =>
+        comment.id.toString() === commentId
+          ? { ...comment, status }
+          : comment
+      )
+    )
+  }, [])
+
   useEffect(() => {
     fetchComments()
 
     let intervalId: NodeJS.Timeout | undefined;
-    
+
     if (autoRefresh) {
       intervalId = setInterval(fetchComments, POLLING_INTERVAL)
     }
@@ -75,11 +86,11 @@ export default function CommentsTable({ monitorId, access_token }: CommentsTable
           </Button>
         </div>
       </div>
-      <DataTable
-        columns={columns(access_token)}
-        data={comments}
-        searchKey="username"
-      />
+        <DataTable
+          columns={columns(access_token, updateCommentStatus)}
+          data={comments}
+          searchKey="username"
+        />
     </div>
   )
 }

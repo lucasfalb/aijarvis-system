@@ -34,7 +34,7 @@ const AccountNameCell = ({ row }: { row: Row<Monitor> }) => {
   
   return (
     <Button
-      variant="link"
+      variant="ghost"
       className="p-0 h-auto font-normal"
       onClick={() => router.push(`/app/projects/${monitor.project_id}/monitors/${monitor.id}`)}
     >
@@ -168,8 +168,19 @@ export const columns: ColumnDef<Monitor>[] = [
       </Button>
     ),
     cell: ({ row }) => {
-      const date = row.getValue("updated_at") || row.getValue("created_at")
-      return new Date(date as string).toLocaleString()
+      const dateValue = row.getValue("updated_at") || row.getValue("created_at");
+      const date = new Date(dateValue as string);
+      
+      return date.toLocaleDateString('pt-BR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }) + ' ' + date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
     },
   },
   {
@@ -183,7 +194,21 @@ export const columns: ColumnDef<Monitor>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => new Date(row.getValue("created_at")).toLocaleString(),
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("created_at") as string);
+      
+      // Use a fixed locale and format to ensure consistency between server and client
+      return date.toLocaleDateString('pt-BR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }) + ' ' + date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+    },
   },
   {
     id: "actions",
