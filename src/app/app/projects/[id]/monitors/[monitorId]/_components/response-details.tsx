@@ -32,6 +32,7 @@ export const ResponseDetails = ({ comment }: { comment: Comment }) => {
           if (result.success && result.response) {
             setResponseData(result.response as ResponseData);
           }
+          console.log(result)
         } catch (error) {
           console.error("Error fetching response:", error);
         } finally {
@@ -79,11 +80,11 @@ export const ResponseDetails = ({ comment }: { comment: Comment }) => {
                         className="rounded-full"
                       />
                     ) : (
-                      <div className="w-5 h-5 rounded-full uppercase p-0 bg-primary/10 flex items-center justify-center text-[10px]">
+                      <div className="w-5 min-w-5 min-h-5 h-5 rounded-full uppercase p-0 bg-primary/10 flex items-center justify-center text-[10px]">
                         {responseData.user?.full_name?.[0] || "U"}
                       </div>
                     )}
-                    <span>
+                    <span className="text-wrap">
                       Sent by {responseData.user?.full_name || "Unknown"} on{" "}
                       {new Date(responseData.reviewed_at).toLocaleString()}
                     </span>

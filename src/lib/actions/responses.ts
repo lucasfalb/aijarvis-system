@@ -20,28 +20,22 @@ type UserInfo = {
 async function getUserInfo(): Promise<UserInfo | null> {
     const supabase = await createClient();
     try {
-        // Obter usuário autenticado
+        // ✅ Obtém usuário autenticado do Supabase
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
-            console.error("User not authenticated");
+            console.error("❌ User not authenticated");
             return null;
         }
 
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('id', user.id)
-            .single();
-
-
+        // ✅ Retorna as informações do usuário sem acessar `profiles`
         return {
             id: user.id,
             email: user.email || '',
-            full_name: profile?.full_name || user.email?.split('@')[0] || 'Unknown User',
-            avatar_url: profile?.avatar_url
-        }
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown User',
+            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || ''
+        };
     } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('❌ Error fetching user info:', error);
         return null;
     }
 }
