@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-
-// 🔧 Encaminhar os dados ao webhook_send
-async function forwardToWebhook(webhookUrl: string, payload: object) {
-    try {
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            console.error('❌ Erro ao encaminhar dados ao webhook_send:', await response.text());
-        }
-    } catch (error) {
-        console.error('❌ Erro ao enviar para webhook_send:', error);
-    }
-}
+import forwardToWebhook from '@/lib/utils/forwardToWebhook';
 
 // ✅ Verificação do Webhook (GET)
 export async function GET(req: NextRequest, { params }: { params: { monitorId: string } }) {

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { createProject, updateProject } from "@/lib/actions/project"
+import { FileUpload } from "@/components/file-upload"
 
 interface ProjectFormProps {
   onSuccess?: () => void;
@@ -20,6 +21,7 @@ interface ProjectFormProps {
 export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
   const isEditing = !!initialData
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -28,11 +30,16 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
 
     try {
       const formData = new FormData(event.currentTarget)
+      
+      // Add files to formData
+      files.forEach(file => {
+        formData.append('files', file)
+      })
+
       const result = isEditing 
         ? await updateProject(initialData.id, formData)
         : await createProject(formData)
 
-      // In onSubmit function, update the success handling
       if (!result.success) {
         throw new Error(result.error)
       }
@@ -45,7 +52,6 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
         },
       })
 
-      // Add revalidatePath here through router.refresh()
       router.refresh()
       router.push("/app/projects")
       onSuccess?.()
@@ -59,6 +65,9 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
     }
   }
 
+  const handleFilesChange = (newFiles: File[]) => {
+    setFiles(newFiles)
+  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6 p-4">
@@ -71,10 +80,15 @@ export default function ProjectForm({ onSuccess, initialData }: ProjectFormProps
         <label htmlFor="description" className="text-sm font-medium">Description</label>
         <Textarea id="description" name="description" defaultValue={initialData?.description} />
       </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Knowledge Base Files</label>
+        <FileUpload onFilesChange={handleFilesChange} />
+      </div>
     
       <Button type="submit" className="w-full" disabled={loading}>
         {loading ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update Project" : "Create Project")}
       </Button>
     </form>
-  );
+  )
 }

@@ -1,4 +1,5 @@
 'use server';
+import forwardToWebhook from '@/lib/utils/forwardToWebhook';
 
 import { createClient } from '@/lib/supabase/server';
 type ProjectActionResult = {
@@ -58,13 +59,13 @@ export async function createProject(formData: FormData): Promise<ProjectActionRe
     const name = formData.get('name') as string;
     const description = formData.get('description') as string | null;
 
+    // Get files from FormData
+    const files: File[] = formData.getAll('files').filter((file): file is File => file instanceof File);
+
     // ✅ Insert project
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .insert({
-        name,
-        description,
-      })
+      .insert({ name, description })
       .select()
       .single();
 
@@ -82,6 +83,52 @@ export async function createProject(formData: FormData): Promise<ProjectActionRe
     if (userProjectError) {
       await supabase.from('projects').delete().eq('id', project.id);
       throw new Error('Failed to assign user role.');
+    }
+
+    // Forward files to webhook if there are any
+    if (files.length > 0) {
+      const WEBHOOK_SENDER = process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE;
+      if (!WEBHOOK_SENDER) {
+        await supabase.from('projects').delete().eq('id', project.id);
+        throw new Error('Webhook URL not configured');
+      }
+
+      try {
+        // Prepare files for webhook
+        const filesData = await Promise.all(
+          files.map(async (file) => ({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            content: await file.arrayBuffer().then(buffer => 
+              Buffer.from(buffer).toString('base64')
+            ),
+            projectId: project.id
+          }))
+        );
+
+        // Send files to webhook
+        await forwardToWebhook(WEBHOOK_SENDER, {
+          projectId: project.id,
+          route_flow: "add_project_file",
+          files: filesData
+        });
+      } catch (webhookError) {
+        console.error('Webhook error:', webhookError);
+
+        // Attempt cleanup
+        const userProjectDeletion = await supabase.from('user_projects').delete().eq('project_id', project.id);
+        const projectDeletion = await supabase.from('projects').delete().eq('id', project.id);
+
+        if (userProjectDeletion.error || projectDeletion.error) {
+          console.error('Failed to delete project after webhook error:', {
+            userProjectDeletionError: userProjectDeletion.error,
+            projectDeletionError: projectDeletion.error,
+          });
+        }
+
+        throw new Error('An error occurred while processing your request. Please try again later.');
+      }
     }
 
     return { success: true, project };

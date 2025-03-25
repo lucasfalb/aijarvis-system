@@ -99,7 +99,7 @@ export async function updateCommentStatus(
             .single();
 
         const payload = {
-            methodResponse: 'reply',
+            route_flow: 'reply',
             commentId: comment.id,
             originalText: comment.text,
             repliedText: replyText,
