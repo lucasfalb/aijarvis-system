@@ -74,7 +74,6 @@ export function SignUpForm({ className, ...props }: React.ComponentProps<"div">)
   const handleGoogleSignIn = async () => {
     const result = await signInWithGoogle()
     if (typeof result === 'string') {
-      // If result is a URL string, redirect to it
       window.location.href = result
     } else if (result.error) {
       setError(result.error)

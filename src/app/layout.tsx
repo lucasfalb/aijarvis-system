@@ -9,6 +9,9 @@ export const metadata: Metadata = {
     default: 'AIJARVIS',
   },
   description: "Your AI Assistant for Everything",
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({
@@ -28,7 +31,7 @@ export default function RootLayout({
         >
             {children}
         </ThemeProvider>
-        <Toaster />
+        <Toaster richColors  />
       </body>
     </html>
   );

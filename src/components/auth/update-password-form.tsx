@@ -21,7 +21,7 @@ interface UpdatePasswordFormProps extends React.ComponentProps<"div"> {
 export function UpdatePasswordForm({ className, token, ...props }: UpdatePasswordFormProps) {
   const [error, setError] = useState<string>("")
   const router = useRouter()
-
+  console.log(token)
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError("")

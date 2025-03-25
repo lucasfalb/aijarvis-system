@@ -67,37 +67,38 @@ export async function resetPassword(formData: FormData) {
   return { success: true }
 }
 
-export async function updatePassword(formData: FormData, code: string | null) {
-  const supabase = await createClient()
+export async function updatePassword(formData: FormData, refresh_token: string | null) {
+  const supabase = await createClient();
 
-  const password = formData.get('password') as string
-  const confirmPassword = formData.get('confirmPassword') as string
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
 
   if (password !== confirmPassword) {
-    return { error: "Passwords do not match" }
+    return { error: "Passwords do not match" };
   }
 
-  if (!code) {
-    return { error: "Invalid or missing reset token." }
+  if (!refresh_token) {
+    return { error: "Invalid or missing session token." };
   }
 
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+  const { data, error: refreshError } = await supabase.auth.refreshSession({ refresh_token });
 
-  if (exchangeError) {
-    return { error: "Invalid or expired reset link." }
+  if (refreshError || !data.session) {
+    return { error: "Invalid or expired session token." };
   }
 
-  const { error: updateError } = await supabase.auth.updateUser({ password })
+  const { error: updateError } = await supabase.auth.updateUser({ password });
 
   if (updateError) {
-    return { error: updateError.message }
+    return { error: updateError.message };
   }
 
-  return { success: true }
+  return { success: true };
 }
 
+
 export async function signOut() {
-  const supabase = await createClient() // Correção: await para resolver a promise
+  const supabase = await createClient() 
   await supabase.auth.signOut()
   redirect('/auth/sign-in')
 }
