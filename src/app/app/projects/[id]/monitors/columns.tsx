@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation"
 import EditMonitor from "./_components/edit-monitor"
 import { Copy } from "lucide-react"
 import { Row } from "@tanstack/react-table"
+import { FacebookIcon } from "@/components/facebook-icon"
+import { InstagramIcon } from "@/components/instagram-icon"
 
 export type Monitor = {
   access_token: string
@@ -31,7 +33,7 @@ export type Monitor = {
 const AccountNameCell = ({ row }: { row: Row<Monitor> }) => {
   const router = useRouter();
   const monitor = row.original;
-  
+
   return (
     <Button
       variant="ghost"
@@ -43,10 +45,24 @@ const AccountNameCell = ({ row }: { row: Row<Monitor> }) => {
   );
 };
 
+const PlatformCell = ({ row }: { row: Row<Monitor> }) => {
+  const platform = row.getValue("platform") as string;
+
+  return (
+    <div title={platform.charAt(0).toUpperCase() + platform.slice(1)} className="flex items-center gap-2">
+      {platform.toLowerCase() === "facebook" ? (
+        <FacebookIcon className="h-5 w-5" />
+      ) : platform.toLowerCase() === "instagram" ? (
+        <InstagramIcon className="h-5 w-5" />
+      ) : null}
+    </div>
+  );
+};
+
 const ActionsCell = ({ row }: { row: Row<Monitor> }) => {
   const monitor = row.original;
   const router = useRouter();
-  
+
   const handleDelete = async () => {
     try {
       const result = await deleteMonitor(monitor.id);
@@ -122,22 +138,23 @@ export const columns: ColumnDef<Monitor>[] = [
   {
     accessorKey: "platform",
     header: "Platform",
+    cell: PlatformCell
   },
   {
     accessorKey: "webhook_receive",
     header: "Webhook URL",
     cell: ({ row }) => {
         const webhook = row.getValue("webhook_receive");
-        
+
         const handleCopy = async () => {
             await navigator.clipboard.writeText(webhook as string);
             toast.success("Webhook URL copied to clipboard");
         };
-    
+
         return (
             <div className="flex items-center gap-2 max-w-[200px] group">
-                <div 
-                    className="truncate cursor-pointer hover:text-primary" 
+                <div
+                    className="truncate cursor-pointer hover:text-primary"
                     title={webhook as string}
                     onClick={handleCopy}
                 >
@@ -170,7 +187,7 @@ export const columns: ColumnDef<Monitor>[] = [
     cell: ({ row }) => {
       const dateValue = row.getValue("updated_at") || row.getValue("created_at");
       const date = new Date(dateValue as string);
-      
+
       return date.toLocaleDateString('pt-BR', {
         year: 'numeric',
         month: '2-digit',
@@ -196,7 +213,7 @@ export const columns: ColumnDef<Monitor>[] = [
     ),
     cell: ({ row }) => {
       const date = new Date(row.getValue("created_at") as string);
-      
+
       // Use a fixed locale and format to ensure consistency between server and client
       return date.toLocaleDateString('pt-BR', {
         year: 'numeric',

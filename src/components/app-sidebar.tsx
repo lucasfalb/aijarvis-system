@@ -22,7 +22,6 @@ import { Logo } from "./logo"
 import Link from "next/link"
 import { ModeToggle } from "./mode-toggle"
 
-// This is sample data.
 const data = {
   projects: [
     {

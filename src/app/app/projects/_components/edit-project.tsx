@@ -14,6 +14,7 @@ import ProjectForm from "./project-form"
 import { useState } from "react"
 import ProjectMembers from "./project-members"
 import ShareProject from "./share-project"
+import { ReactNode } from "react"
 
 interface EditProjectProps {
   project: {
@@ -21,9 +22,10 @@ interface EditProjectProps {
     name: string
     description?: string
   }
+  children?: ReactNode
 }
 
-export function EditProject({ project }: EditProjectProps) {
+export function EditProject({ project, children }: EditProjectProps) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState(0)
 
@@ -34,8 +36,9 @@ export function EditProject({ project }: EditProjectProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button  variant="ghost" size="icon">
           <PencilIcon className="h-4 w-4" />
+          {children}
         </Button>
       </SheetTrigger>
       <SheetContent className="gap-0 min-w-[100vw] md:min-w-[600px]">

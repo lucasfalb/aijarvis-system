@@ -28,6 +28,10 @@ button {
   cursor: pointer !important;
 }
 
+body::-webkit-scrollbar {
+  display: none;
+}
+
 @plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));

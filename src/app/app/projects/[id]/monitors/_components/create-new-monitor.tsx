@@ -14,16 +14,17 @@ import { useState } from "react";
 
 interface CreateNewMonitorProps {
     projectId: string;
+    label?: string;
 }
 
-export default function CreateNewMonitor({ projectId }: CreateNewMonitorProps) {
+export default function CreateNewMonitor({ projectId, label = "New Monitor" }: CreateNewMonitorProps) {
     const [open, setOpen] = useState(false);
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
                 <Button>
                     <PlusIcon className="w-4 h-4 mr-2" />
-                    New Monitor
+                    {label}
                 </Button>
             </SheetTrigger>
             <SheetContent className="gap-0">

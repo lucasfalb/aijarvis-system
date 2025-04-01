@@ -5,7 +5,7 @@ import { getMonitors } from "@/lib/actions/monitor"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, ExternalLink, Calendar, User, RefreshCw } from "lucide-react"
+import { ExternalLink, Calendar, User, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DataTable } from "@/components/data-table"
 import CreateNewMonitor from "./monitors/_components/create-new-monitor"
@@ -52,7 +52,7 @@ export default async function ProjectPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-fit">
           <h1 className="text-3xl font-bold">{project.name}</h1>
           <EditProject project={project} />
         </div>
@@ -137,14 +137,14 @@ export default async function ProjectPage({
             </Button>
           </Link>
         </div>
-        
+
         <TabsContent value="all" className="mt-0">
           <Card className="p-4 pt-0">
             <CardContent className="p-0">
               {projectMonitors.length > 0 ? (
-                <DataTable 
-                  columns={columns} 
-                  data={projectMonitors} 
+                <DataTable
+                  columns={columns}
+                  data={projectMonitors}
                   searchKey="account_name"
                   pageSize={5}
                   showPaginationOnLength={5}
@@ -152,25 +152,20 @@ export default async function ProjectPage({
               ) : (
                 <div className="flex flex-col items-center justify-center p-5">
                   <p className="text-muted-foreground mb-4">No monitors found for this project</p>
-                  <Link href={`/app/projects/${id}/monitors/new`}>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Create Your First Monitor
-                    </Button>
-                  </Link>
+                  <CreateNewMonitor projectId={id} label="Create your first monitor" />
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="instagram" className="mt-0">
           <Card className="p-4 pt-0">
             <CardContent className="p-0">
               {projectMonitors.filter(m => m.platform === 'instagram').length > 0 ? (
-                <DataTable 
-                  columns={columns} 
-                  data={projectMonitors.filter(m => m.platform === 'instagram')} 
+                <DataTable
+                  columns={columns}
+                  data={projectMonitors.filter(m => m.platform === 'instagram')}
                   searchKey="account_name"
                   pageSize={5}
                   showPaginationOnLength={5}
@@ -183,14 +178,14 @@ export default async function ProjectPage({
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="facebook" className="mt-0">
           <Card className="p-4 pt-0">
             <CardContent className="p-0">
               {projectMonitors.filter(m => m.platform === 'facebook').length > 0 ? (
-                <DataTable 
-                  columns={columns} 
-                  data={projectMonitors.filter(m => m.platform === 'facebook')} 
+                <DataTable
+                  columns={columns}
+                  data={projectMonitors.filter(m => m.platform === 'facebook')}
                   searchKey="account_name"
                   pageSize={5}
                   showPaginationOnLength={5}

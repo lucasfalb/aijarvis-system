@@ -2,9 +2,9 @@
 
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, Suspense } from "react"
 
-export function ToastMessage() {
+function ToastMessageContent() {
   const searchParams = useSearchParams()
   const toastShown = useRef(false)
   
@@ -26,4 +26,12 @@ export function ToastMessage() {
   }, [searchParams])
 
   return null
+}
+
+export function ToastMessage() {
+  return (
+    <Suspense fallback={null}>
+      <ToastMessageContent />
+    </Suspense>
+  )
 }
