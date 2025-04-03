@@ -42,7 +42,7 @@ export async function POST(req: NextRequest, { params }: { params: { monitorId: 
         // ✅ Buscar monitor e verificar `webhook_token`
         const { data: monitor, error: monitorError } = await supabase
             .from('monitors')
-            .select('id, account_name, platform, webhook_send, access_token, projectId')
+            .select('id, account_name, platform, webhook_send, access_token, project_id')
             .eq('id', monitorId)
             .single();
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { monitorId: 
             account_name: monitor.account_name,
             platform: monitor.platform,
             access_token: monitor.access_token,
-            projectId: monitor.projectId,
+            projectId: monitor.project_id,
             received_at: new Date().toISOString(),
             data: body, // Dados recebidos no webhook
         };
