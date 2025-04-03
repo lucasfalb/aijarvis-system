@@ -12,13 +12,12 @@ interface FileUploadProps {
   accept?: Record<string, string[]>;
 }
 
-export function FileUpload({ 
-  onFilesChange, 
+export function FileUpload({
+  onFilesChange,
   maxSize = 10485760,
   accept = {
     'application/pdf': ['.pdf'],
     'text/plain': ['.txt'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
   }
 }: FileUploadProps) {
   const [files, setFiles] = useState<File[]>([])

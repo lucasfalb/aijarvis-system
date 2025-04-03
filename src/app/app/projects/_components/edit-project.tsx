@@ -23,9 +23,10 @@ interface EditProjectProps {
     description?: string
   }
   children?: ReactNode
+  className?: string
 }
 
-export function EditProject({ project, children }: EditProjectProps) {
+export function EditProject({ project, children, className }: EditProjectProps) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState(0)
 
@@ -36,7 +37,7 @@ export function EditProject({ project, children }: EditProjectProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button  variant="ghost" size="icon">
+        <Button className={className} variant="ghost" size="icon">
           <PencilIcon className="h-4 w-4" />
           {children}
         </Button>

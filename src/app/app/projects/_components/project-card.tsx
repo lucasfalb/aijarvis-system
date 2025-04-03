@@ -116,17 +116,17 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild className="flex flex-col">
-                <div className="w-full">
-                <EditProject project={{
+              <EditProject
+                className="w-full"
+                project={{
                   id: String(project.id),
                   name: project.name,
                   description: project.description || undefined
                 }}>
+                <div >
                   Edit Project
-                </EditProject>
                 </div>
-              </DropdownMenuItem>
+              </EditProject>
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 disabled={isDeleting}

@@ -1,4 +1,5 @@
 'use server';
+import { addProjectFiles } from "./files";
 
 import { createClient } from '@/lib/supabase/server';
 type ProjectActionResult = {
@@ -58,10 +59,9 @@ export async function createProject(formData: FormData): Promise<ProjectActionRe
     const name = formData.get('name') as string;
     const description = formData.get('description') as string | null;
 
-    // Get files from FormData
     const files: File[] = formData.getAll('files').filter((file): file is File => file instanceof File);
 
-    // ✅ Insert project
+    // ✅ Inserir projeto
     const { data: project, error: projectError } = await supabase
       .from('projects')
       .insert({ name, description })
@@ -70,7 +70,7 @@ export async function createProject(formData: FormData): Promise<ProjectActionRe
 
     if (projectError) throw projectError;
 
-    // ✅ Assign user as "admin"
+    // ✅ Atribuir usuário como admin
     const { error: userProjectError } = await supabase
       .from('user_projects')
       .insert({
@@ -84,53 +84,25 @@ export async function createProject(formData: FormData): Promise<ProjectActionRe
       throw new Error('Failed to assign user role.');
     }
 
-    // ✅ Forward files to webhook
+    // ✅ Enviar arquivos se houver
     if (files.length > 0) {
-      const WEBHOOK_SENDER = process.env.NEXT_PUBLIC_WEBHOOK_N8N_RESPONSE;
-      if (!WEBHOOK_SENDER) {
+      const uploadResult = await addProjectFiles(project.id, files);
+
+      if (!uploadResult.success) {
+        // Rollback total se falhar o envio dos arquivos
+        await supabase.from('user_projects').delete().eq('project_id', project.id);
         await supabase.from('projects').delete().eq('id', project.id);
-        throw new Error('Webhook URL not configured');
-      }
-
-      try {
-        // Monta um FormData para envio real dos arquivos
-        const webhookFormData = new FormData();
-        webhookFormData.append('projectId', project.id);
-        webhookFormData.append('route_flow', 'add_project_file');
-
-        files.forEach(file => {
-          webhookFormData.append('files', file);
-        });
-
-        const webhookResponse = await fetch(WEBHOOK_SENDER, {
-          method: 'POST',
-          body: webhookFormData,
-        });
-
-        if (!webhookResponse.ok) {
-          throw new Error(`Webhook responded with status ${webhookResponse.status}`);
-        }
-      } catch (webhookError) {
-        console.error('Webhook error:', webhookError);
-
-        const userProjectDeletion = await supabase.from('user_projects').delete().eq('project_id', project.id);
-        const projectDeletion = await supabase.from('projects').delete().eq('id', project.id);
-
-        if (userProjectDeletion.error || projectDeletion.error) {
-          console.error('Failed to delete project after webhook error:', {
-            userProjectDeletionError: userProjectDeletion.error,
-            projectDeletionError: projectDeletion.error,
-          });
-        }
-
-        throw new Error('An error occurred while sending files. Please try again later.');
+        throw new Error(uploadResult.error || 'Failed to upload files');
       }
     }
 
     return { success: true, project };
   } catch (error) {
     console.error('Error creating project:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to create project' };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create project',
+    };
   }
 }
 
@@ -157,24 +129,36 @@ export async function updateProject(projectId: string, formData: FormData): Prom
       throw new Error("You do not have permission to update this project.");
     }
 
-    // ✅ Atualiza o projeto, incluindo `updated_at`
+    // ✅ Se houver arquivos, tenta fazer upload primeiro
+    const files: File[] = formData.getAll('files').filter((file): file is File => file instanceof File);
+    if (files.length > 0) {
+      const uploadResult = await addProjectFiles(projectId, files);
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || "Failed to upload project files");
+      }
+    }
+
+    // ✅ Agora atualiza o projeto
     const { data, error: updateError } = await supabase
       .from('projects')
       .update({
         name: formData.get('name') as string,
         description: formData.get('description') as string,
-        updated_at: new Date().toISOString(), // Atualiza `updated_at`
+        updated_at: new Date().toISOString(),
       })
       .eq('id', projectId)
-      .select('id, name, description, updated_at') // Retorna os dados atualizados
+      .select('id, name, description, updated_at')
       .single();
 
     if (updateError) throw updateError;
 
     return { success: true, project: data };
   } catch (error) {
-    console.error('❌ Error updating project:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to update project' };
+    console.error("❌ Error updating project:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update project",
+    };
   }
 }
 
